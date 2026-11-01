@@ -1,0 +1,25 @@
+Scene Studio
+Copyright 2023 Sören Beye (Hypfer)
+Copyright 2026 Michael Andrejews
+
+This product is based on Scene Presets (hass-scene_presets) by Sören Beye
+(https://github.com/Hypfer/hass-scene_presets), licensed under the Apache License 2.0.
+
+Changes compared to Scene Presets (2026, Michael Andrejews):
+- Own integration domain (scene_studio), panel and room card names, so it can be installed next to
+  Scene Presets; import of saved scenes, own presets and scene entities from Scene Presets
+- Saved scenes with scene entities, scene editor, lamp modes
+- Lights of a scene: brightness per light, optional lights, exclude, light groups as one light
+- Per-light timing for dynamic scenes
+- Presets from photos and replaced pictures of built-in presets
+- Room card for dashboards
+- Redesigned panel (scenes by room, presets tab), English and German texts
+- Own logo and icon
+- New pictures for the built-in presets (photos from Unsplash and Wikimedia Commons, see
+  custom_components/scene_studio/assets/CREDITS.md), preset colors taken from these photos,
+  presets with (almost) the same colors hidden, new presets, categories by content
+- Tests, documentation
+
+Files changed or added by this version carry a note at the top. The built-in presets (names and
+IDs), the pictures of the presets in the category Defaults, the color logic and the dynamic scene
+engine are the work of the original author.

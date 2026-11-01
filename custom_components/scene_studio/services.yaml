@@ -1,0 +1,400 @@
+# Modified by andrejem (2026): fields for per-light timing, saved scenes, exclude, keep_groups and optional.
+apply_preset:
+  name: "Apply preset"
+  description: Apply a scene preset to specified light entities
+  fields:
+    preset_id:
+      name: "Preset"
+      description: "The preset ID to use"
+      example: "Rest"
+      required: true
+      selector:
+        text: null
+    targets:
+      name: "Targets"
+      description: "What to apply the preset to"
+      required: true
+      selector:
+        target:
+          entity:
+            domain:
+              - light
+              - group
+    brightness:
+      name: "Brightness"
+      description: "Override the presets brightness"
+      example: 150
+      selector:
+        number:
+          min: 0
+          max: 255
+    transition:
+      name: "Transition"
+      description: "Transition duration between states"
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: seconds
+    shuffle:
+      name: "Shuffle"
+      description: "Shuffle the colors before applying"
+      example: true
+      selector:
+        boolean:
+    smart_shuffle:
+      name: "Smart shuffle"
+      description: "Ensure smooth color transitions when shuffling"
+      example: true
+      selector:
+        boolean:
+    exclude:
+      name: "Exclude"
+      description: "Optional. Lights to leave out, e.g. when targeting a whole area. Excluding a group also excludes its members."
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    keep_groups:
+      name: "Keep groups"
+      description: "Optional. Light groups that are controlled as one light (all members get the same color) instead of light by light."
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    optional:
+      name: "Optional lights"
+      description: "Optional. Lights that take part only if they are on when the scene starts. If one is turned on later while the scene is active, it joins the scene."
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    light_brightness:
+      name: "Brightness per light"
+      description: "Optional. Brightness in percent (0-100) for single lights, e.g. {light.led_strip: 20}. Overrides the scene brightness for these lights; 0 turns the light off when the scene starts. A value for a group also applies to its lights."
+      example: '{"light.living_room_strip": 20}'
+      selector:
+        object:
+
+get_dynamic_scenes:
+  name: "Get dynamic scenes"
+  description: Get all currently active dynamic scenes
+
+start_dynamic_scene:
+  name: "Start dynamic scene"
+  description: Start a loop that periodically applies a shuffled scene preset
+  fields:
+    preset_id:
+      name: "Preset"
+      description: "The preset ID to use"
+      example: "Rest"
+      required: true
+      selector:
+        text: null
+    targets:
+      name: "Targets"
+      description: "What to apply the preset to"
+      required: true
+      selector:
+        target:
+          entity:
+            domain:
+              - light
+              - group
+    brightness:
+      name: "Brightness"
+      description: "Override the presets brightness"
+      example: 150
+      selector:
+        number:
+          min: 0
+          max: 255
+    transition:
+      name: "Transition"
+      description: "Transition duration between states"
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: seconds
+    interval:
+      name: "Interval"
+      description: "Time between color changes"
+      example: 60
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: seconds
+    interval_min:
+      name: "Interval min (per light)"
+      description: "Optional. Enables per-light timing: each light waits a random time between min and max before its next color change"
+      example: 20
+      selector:
+        number:
+          min: 1
+          max: 600
+          unit_of_measurement: seconds
+    interval_max:
+      name: "Interval max (per light)"
+      description: "Optional. Upper bound of the random per-light interval"
+      example: 60
+      selector:
+        number:
+          min: 1
+          max: 600
+          unit_of_measurement: seconds
+    transition_min:
+      name: "Transition min (per light)"
+      description: "Optional. Enables per-light timing: each color change uses a random transition between min and max"
+      example: 5
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: seconds
+    transition_max:
+      name: "Transition max (per light)"
+      description: "Optional. Upper bound of the random per-light transition"
+      example: 15
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: seconds
+    exclude:
+      name: "Exclude"
+      description: "Optional. Lights to leave out, e.g. when targeting a whole area. Excluding a group also excludes its members."
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    keep_groups:
+      name: "Keep groups"
+      description: "Optional. Light groups that are controlled as one light (all members get the same color) instead of light by light."
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    optional:
+      name: "Optional lights"
+      description: "Optional. Lights that take part only if they are on when the scene starts. If one is turned on later while the scene is active, it joins the scene."
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    light_brightness:
+      name: "Brightness per light"
+      description: "Optional. Brightness in percent (0-100) for single lights, e.g. {light.led_strip: 20}. Overrides the scene brightness for these lights; 0 turns the light off when the scene starts. A value for a group also applies to its lights."
+      example: '{"light.living_room_strip": 20}'
+      selector:
+        object:
+
+stop_dynamic_scene:
+  name: "Stop dynamic scene"
+  description: Stop a dynamic scene by ID
+  fields:
+    id:
+      name: ID
+      description: "The UUID of the dynamic scene to stop"
+      required: true
+      example: "d1db9696-e8ef-41b7-ba71-af696ee89b28"
+      selector:
+        text: null
+
+stop_dynamic_scenes_for_targets:
+  name: "Stop dynamic scenes for targets"
+  description: Stops all dynamic scenes that include any of the specified targets
+  fields:
+    targets:
+      name: "Targets"
+      description: "Targets to stop all dynamic scenes for"
+      required: true
+      selector:
+        target:
+          entity:
+            domain:
+              - light
+              - group
+
+stop_all_dynamic_scenes:
+  name: "Stop all dynamic scenes"
+  description: Stops all currently running dynamic scenes
+
+save_scene:
+  name: "Save scene"
+  description: Save a preset together with targets and settings as a reusable scene. Creates a scene entity.
+  fields:
+    id:
+      name: ID
+      description: "Optional. ID of an existing saved scene to overwrite"
+      selector:
+        text: null
+    name:
+      name: Name
+      description: "Name of the saved scene"
+      required: true
+      example: "Living room evening"
+      selector:
+        text: null
+    preset_id:
+      name: "Preset"
+      description: "The preset ID to use"
+      required: true
+      selector:
+        text: null
+    targets:
+      name: "Targets"
+      description: "Lights to apply the preset to"
+      required: true
+      selector:
+        target:
+          entity:
+            domain:
+              - light
+              - group
+    dynamic:
+      name: "Dynamic"
+      description: "Start a dynamic scene instead of applying the preset once"
+      selector:
+        boolean:
+    brightness:
+      name: "Brightness"
+      selector:
+        number:
+          min: 0
+          max: 255
+    transition:
+      name: "Transition"
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: seconds
+    shuffle:
+      name: "Shuffle"
+      selector:
+        boolean:
+    smart_shuffle:
+      name: "Smart shuffle"
+      selector:
+        boolean:
+    interval:
+      name: "Interval"
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: seconds
+    interval_min:
+      name: "Interval min (per light)"
+      selector:
+        number:
+          min: 1
+          max: 600
+          unit_of_measurement: seconds
+    interval_max:
+      name: "Interval max (per light)"
+      selector:
+        number:
+          min: 1
+          max: 600
+          unit_of_measurement: seconds
+    transition_min:
+      name: "Transition min (per light)"
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: seconds
+    transition_max:
+      name: "Transition max (per light)"
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: seconds
+    exclude:
+      name: "Exclude"
+      description: "Optional. Lights to leave out, e.g. when targeting a whole area. Excluding a group also excludes its members."
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    keep_groups:
+      name: "Keep groups"
+      description: "Optional. Light groups that are controlled as one light (all members get the same color) instead of light by light."
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    optional:
+      name: "Optional lights"
+      description: "Optional. Lights that take part only if they are on when the scene starts. If one is turned on later while the scene is active, it joins the scene."
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    light_brightness:
+      name: "Brightness per light"
+      description: "Optional. Brightness in percent (0-100) for single lights, e.g. {light.led_strip: 20}. Overrides the scene brightness for these lights; 0 turns the light off when the scene starts. A value for a group also applies to its lights."
+      example: '{"light.living_room_strip": 20}'
+      selector:
+        object:
+
+delete_saved_scene:
+  name: "Delete saved scene"
+  description: Delete a saved scene and its scene entity
+  fields:
+    id:
+      name: ID
+      description: "ID of the saved scene"
+      required: true
+      selector:
+        text: null
+
+activate_saved_scene:
+  name: "Activate saved scene"
+  description: Activate a saved scene (same as turning on its scene entity)
+  fields:
+    id:
+      name: ID
+      description: "ID of the saved scene"
+      required: true
+      selector:
+        text: null
+    dynamic:
+      name: "Dynamic"
+      description: "Optional. Override the saved mode: off applies a dynamic scene once (static), on starts a static scene as dynamic scene"
+      selector:
+        boolean:
+    targets:
+      name: "Targets"
+      description: "Optional. Apply the saved scene to these lights instead of its own targets (exclude, keep_groups and optional are ignored then). The lights leave running dynamic scenes, the rest of those scenes keeps going."
+      selector:
+        target:
+          entity:
+            domain: light
+
+import_scene_presets:
+  name: Import from Scene Presets
+  description: >-
+    Brings saved scenes, own presets and replaced pictures over from the Scene Presets integration.
+    Scenes that were imported before are skipped.
+  fields:
+    take_over_entities:
+      name: Take over scene entities
+      description: >-
+        Keep entity ID, name, area and labels of the scene entities, so dashboards and automations keep
+        working. Scene Presets is disabled for that (not removed).
+      default: true
+      selector:
+        boolean:
+    overwrite:
+      name: Overwrite
+      description: Import scenes and files again even if they exist already.
+      default: false
+      selector:
+        boolean:

@@ -1,0 +1,40 @@
+name: Bug report
+description: Something does not work as expected
+body:
+  - type: textarea
+    id: what-is-happening
+    attributes:
+      label: What is happening?
+      description: What do you see, and what did you do before?
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-should-be-happening
+    attributes:
+      label: What should be happening?
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Scene Studio version
+      placeholder: "3.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ha-version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.10.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log entries
+      description: Entries of Settings > System > Logs that mention scene_studio, if any.
+      render: text

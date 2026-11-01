@@ -1,0 +1,15 @@
+{
+    "domain": "scene_studio",
+    "name": "Scene Studio",
+    "after_dependencies": ["http"],
+    "codeowners": [
+        "@andrejem"
+    ],
+    "config_flow": true,
+    "documentation": "https://github.com/andrejem/scene-studio",
+    "integration_type": "service",
+    "iot_class": "calculated",
+    "issue_tracker": "https://github.com/andrejem/scene-studio/issues",
+    "requirements": [],
+    "version": "3.1.0"
+}
