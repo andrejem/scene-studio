@@ -2,6 +2,7 @@
     "domain": "scene_studio",
     "name": "Scene Studio",
     "after_dependencies": ["http"],
+    "categories": ["lighting"],
     "codeowners": [
         "@andrejem"
     ],
