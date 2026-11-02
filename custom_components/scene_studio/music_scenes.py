@@ -155,6 +155,10 @@ class MusicScenes:
         self._colors: dict[str, tuple[str | None, list]] = {}  # scene_id -> (album, colors)
         self._unsub_players = None
         self._unsub_store = store.add_listener(self._on_store_change)
+        # The speaker of a room can change when a scene or a speaker is moved to another room
+        self._unsub_registry = hass.bus.async_listen(
+            er.EVENT_ENTITY_REGISTRY_UPDATED, self._on_registry_change
+        )
         self._subscribe_players()
 
     # ------------------------------------------------------------------ helpers
@@ -296,6 +300,12 @@ class MusicScenes:
                 self._drop(scene_id)
             RUNTIME_PRESETS.pop(runtime_preset_id(scene_id), None)
         self._subscribe_players()
+
+    @callback
+    def _on_registry_change(self, event: Event):
+        entity_id = event.data.get("entity_id", "")
+        if entity_id.startswith(("scene.", "media_player.")):
+            self._subscribe_players()
 
     def _subscribe_players(self):
         if self._unsub_players is not None:
@@ -621,3 +631,4 @@ class MusicScenes:
         if self._unsub_players is not None:
             self._unsub_players()
         self._unsub_store()
+        self._unsub_registry()
