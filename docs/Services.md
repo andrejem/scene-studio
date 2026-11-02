@@ -6,6 +6,9 @@ members unless they are listed in `keep_groups`. Preset IDs are listed in the
 [preset overview](../custom_components/scene_studio/assets/Readme.md); IDs of presets made in the
 panel are shown in `userdata/custom/presets.json`.
 Hidden presets (no longer shown in the panel) keep working with their ID.
+The preset **Music** (`b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42`) takes the colors of the album cover
+that is playing in the room of the lights; without music, `apply_preset` and `start_dynamic_scene`
+do nothing with it ([music scenes](Music%20scenes.md)).
 
 ## Apply presets
 
@@ -64,6 +67,7 @@ Returns the stored scene, including its `id`.
 | `targets` | yes | Lights of the scene |
 | `id` | | ID of an existing scene to overwrite (the entity keeps its ID) |
 | `dynamic` | | Start a dynamic scene instead of applying the preset once |
+| `music` | | Only for the preset Music: `media_player` (default: speaker of the scene's room), `auto_start` (`never`, `follow`, `always`), `when_on` (start by itself also when a light is on) – see [music scenes](Music%20scenes.md) |
 | all fields of `apply_preset` / `start_dynamic_scene` | | stored with the scene |
 
 ### `activate_saved_scene`
@@ -74,7 +78,7 @@ Same as turning on the scene entity.
 |---|---|---|
 | `id` | yes | ID of the saved scene |
 | `dynamic` | | Override the saved mode: `false` applies a dynamic scene once, `true` starts a static scene as dynamic scene |
-| `targets` | | Apply the scene to these lights instead of its own ([lamp modes](Lamp%20modes.md)) |
+| `targets` | | Apply the scene to these lights instead of its own ([lamp modes](Lamp%20modes.md)); a music scene then uses its current cover colors |
 
 ### `delete_saved_scene`
 
@@ -123,4 +127,5 @@ data:
 | `scene_studio/get_saved_scenes` | List saved scenes |
 | `scene_studio/get_dynamic_scenes` | List running dynamic scenes |
 | `scene_studio/resolve_targets` | Lights a scene with these targets controls |
+| `scene_studio/get_music_scenes` | Active music scenes with speaker, cover and current colors |
 | `scene_studio/save_custom_preset`, `delete_custom_preset`, `set_preset_image`, `reset_preset` | Presets from photos (admins; the preset is passed as `preset_id`) |

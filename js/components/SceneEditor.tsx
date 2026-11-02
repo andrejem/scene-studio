@@ -422,6 +422,7 @@ export const SceneEditor: React.FunctionComponent<{
                             {
                                 musicOn &&
                                 <div className={"sp-field scene-music"}>
+                                    <div className={"sp-strong"}>{t("music_heading")}</div>
                                     <div className={"sp-secondary sp-small"}>{t("music_help")}</div>
                                     <label className={"sp-field"}>
                                         <span className={"sp-field-label"}>{t("music_player")}</span>

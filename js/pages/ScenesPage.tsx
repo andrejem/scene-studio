@@ -157,6 +157,7 @@ export const ScenesPage: React.FunctionComponent<{
                                     actionLabel={t("edit")}
                                     onActionClick={() => onEdit(scene)}
                                     badge={scene.preset_id === MUSIC_PRESET_ID ? t("music_badge") : (scene.dynamic ? t("badge_dynamic") : undefined)}
+                                    badgeIcon={scene.preset_id === MUSIC_PRESET_ID ? "mdi:music-note" : undefined}
                                     active={activeIds.has(scene.id)}
                                 />
                             ))}

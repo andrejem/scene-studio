@@ -18,7 +18,8 @@ export const PresetTile :React.FunctionComponent<{
     actionLabel?: string
     onActionClick?: (name: string) => void
 
-    badge?: string
+    badge?: string,
+    badgeIcon?: string
     active?: boolean
     small?: boolean
     title?: string
@@ -36,6 +37,7 @@ export const PresetTile :React.FunctionComponent<{
     onActionClick,
 
     badge,
+    badgeIcon,
     active,
     small,
     title
@@ -111,7 +113,7 @@ export const PresetTile :React.FunctionComponent<{
             {
                 badge &&
                 <span className={"tile-badge"} style={actionIcon && onFavClick ? {left: "40px"} : undefined}>
-                    <HaIcon icon={"mdi:motion-play-outline"} size={14}/>
+                    <HaIcon icon={badgeIcon ?? "mdi:motion-play-outline"} size={14}/>
                     {badge}
                 </span>
             }
