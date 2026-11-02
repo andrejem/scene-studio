@@ -1,4 +1,4 @@
-# Added by andrejem (2026): persistent saved scenes (preset + targets + settings).
+# Added by andrejem (2026): persistent saved scenes (preset + targets + settings, music).
 
 import logging
 import uuid
@@ -81,6 +81,9 @@ class SavedSceneStore:
         for key in SCENE_SETTING_KEYS:
             if data.get(key) is not None:
                 scene[key] = data[key]
+        if data.get("music"):
+            # Music scene: colors from the album cover of a media player (music_scenes.py)
+            scene["music"] = dict(data["music"])
 
         self._scenes[scene_id] = scene
         await self._async_save()

@@ -5,6 +5,7 @@
 # and saved scenes. activate_saved_scene can apply a saved scene to other lights (targets).
 # Brightness per light (light_brightness), 0 % turns the light off when the scene starts.
 # Import from Scene Presets (import_scene_presets).
+# Music scenes: colors from the album cover of a media player (music_scenes.py).
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
@@ -21,6 +22,8 @@ from .websocket_api import async_setup_websocket_api
 from .saved_scenes import SavedSceneStore, build_service_call
 from .optional_lights import OptionalLights, split_optional
 from .migrate import async_import_scene_presets
+from .music_scenes import MusicScenes, AUTO_START_OPTIONS, AUTO_START_NEVER, runtime_preset_id
+from .file_utils import RUNTIME_PRESETS
 
 PLATFORMS = ["scene"]
 
@@ -70,6 +73,12 @@ STOP_DYNAMIC_SCENE_SCHEMA = vol.Schema({
     vol.Required(ATTR_DYNAMIC_SCENE_ID): cv.string,
 })
 
+MUSIC_SCHEMA = vol.Schema({
+    vol.Required("media_player"): cv.entity_domain("media_player"),
+    vol.Optional("auto_start", default=AUTO_START_NEVER): vol.In(AUTO_START_OPTIONS),
+    vol.Optional("when_on", default=False): cv.boolean,
+})
+
 SAVE_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_DYNAMIC_SCENE_ID): cv.string,
     vol.Required(ATTR_NAME): vol.All(cv.string, vol.Length(min=1)),
@@ -89,6 +98,7 @@ SAVE_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_KEEP_GROUPS): cv.entity_ids,
     vol.Optional(ATTR_OPTIONAL): cv.entity_ids,
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
+    vol.Optional("music"): MUSIC_SCHEMA,
 })
 
 SAVED_SCENE_ID_SCHEMA = vol.Schema({
@@ -137,6 +147,8 @@ async def async_setup(hass, config):
     hass.data.setdefault(DOMAIN, {})["saved_scenes"] = saved_scene_store
     optional_lights = OptionalLights(hass, dynamic_scene_manager)
     hass.data[DOMAIN]["optional_lights"] = optional_lights
+    music_scenes = MusicScenes(hass, saved_scene_store, dynamic_scene_manager)
+    hass.data[DOMAIN]["music_scenes"] = music_scenes
 
     async def apply_preset_service(call):
         preset_id = call.data.get(ATTR_SCENE_PRESET_ID)
@@ -164,6 +176,7 @@ async def async_setup(hass, config):
             hass, light_entity_ids, call.data.get(ATTR_OPTIONAL), call.data.get(ATTR_KEEP_GROUPS)
         )
         optional_lights.forget_overlapping(light_entity_ids, optional_ids)
+        music_scenes.release_lights(light_entity_ids + optional_ids)
         light_brightness = call.data.get(ATTR_LIGHT_BRIGHTNESS)
         light_entity_ids, off_ids = split_off(hass, light_entity_ids, light_brightness)
         optional_on, optional_off = split_off(hass, optional_on, light_brightness)
@@ -214,6 +227,7 @@ async def async_setup(hass, config):
             hass, light_entity_ids, call.data.get(ATTR_OPTIONAL), call.data.get(ATTR_KEEP_GROUPS)
         )
         optional_lights.forget_overlapping(light_entity_ids, optional_ids)
+        music_scenes.release_lights(light_entity_ids + optional_ids)
         light_brightness = call.data.get(ATTR_LIGHT_BRIGHTNESS)
         light_entity_ids, off_ids = split_off(hass, light_entity_ids, light_brightness)
         optional_on, optional_off = split_off(hass, optional_on, light_brightness)
@@ -298,8 +312,15 @@ async def async_setup(hass, config):
         if scene is None:
             raise vol.Invalid(f"Saved scene '{scene_id}' not found.")
 
-        service, service_data = build_service_call(scene, call.data.get(ATTR_DYNAMIC))
         override = call.data.get(ATTR_TARGETS)
+        if scene.get("music") and not override:
+            await music_scenes.async_activate(scene)
+            return
+
+        service, service_data = build_service_call(scene, call.data.get(ATTR_DYNAMIC))
+        if scene.get("music") and runtime_preset_id(scene_id) in RUNTIME_PRESETS:
+            # A lamp mode of a music scene shows the current cover colors
+            service_data[ATTR_SCENE_PRESET_ID] = runtime_preset_id(scene_id)
         if override:
             # Apply the saved scene to other lights, e.g. one lamp of the room (lamp modes)
             for key in (ATTR_EXCLUDE, ATTR_KEEP_GROUPS, ATTR_OPTIONAL):

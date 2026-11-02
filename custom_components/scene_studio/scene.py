@@ -1,4 +1,4 @@
-# Added by andrejem (2026): one scene entity per saved scene.
+# Added by andrejem (2026): one scene entity per saved scene (attribute music for music scenes).
 
 import logging
 from typing import Any
@@ -44,6 +44,7 @@ class SavedSceneEntity(Scene):
             "saved_scene_id": self._scene["id"],
             "preset_id": self._scene.get("preset_id"),
             "dynamic": self._scene.get("dynamic", False),
+            "music": bool(self._scene.get("music")),
         }
 
     @callback

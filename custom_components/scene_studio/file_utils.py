@@ -1,5 +1,6 @@
 # Modified by andrejem (2026): presets are built by load_preset_data(), so presets created in the
-# panel and replaced preset images (overrides) can be reloaded without a restart
+# panel and replaced preset images (overrides) can be reloaded without a restart.
+# Runtime presets for music scenes (RUNTIME_PRESETS).
 import json
 import os
 import logging
@@ -60,6 +61,10 @@ def load_preset_data():
 
 
 PRESET_DATA = load_preset_data()
+
+# Added by andrejem (2026): presets that only exist at runtime (colors of a music scene's cover).
+# Not shown in the panel, looked up by apply_preset before the regular presets.
+RUNTIME_PRESETS: dict[str, dict] = {}
 
 
 def reload_preset_data():
