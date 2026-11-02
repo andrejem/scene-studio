@@ -47,7 +47,7 @@ export const ScenesPage: React.FunctionComponent<{
         const ids = new Set<string>();
         groups.forEach(g => {
             const runningHere = g.scenes.find(({scene}) => scene.dynamic && running.some(r =>
-                r.parameters?.preset_id === scene.preset_id &&
+                (r.parameters?.preset_id === scene.preset_id || r.parameters?.preset_id === "music_" + scene.id) &&
                 (r.parameters?.light_entity_ids ?? []).some((e: string) => (entityAreaId(hass, e) ?? NO_ROOM) === g.key)
             ));
             if (runningHere) {
