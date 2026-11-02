@@ -1,6 +1,7 @@
-# Added by andrejem (2026): music scenes. The colors of a saved scene come from the album cover of
-# a media player. Selecting the scene activates it; it can also start by itself when music starts.
-# When the music stops (or moves on to another room), the lights return to their state before.
+# Added by andrejem (2026): music scenes. A saved scene with the preset "Music" takes its colors from
+# the album cover of a speaker (the one in the scene's room unless chosen). Selecting the scene
+# activates it - until a cover is known nothing changes. It can also start by itself when music
+# starts. When the music stops (or moves on to another room), the lights return to their state before.
 
 from __future__ import annotations
 
@@ -16,6 +17,8 @@ from dataclasses import dataclass, field
 from urllib.parse import parse_qs, urlsplit
 
 from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event
 from homeassistant.helpers.network import NoURLAvailableError, get_url
@@ -29,6 +32,7 @@ from .const import (
     ATTR_TARGETS,
     ATTR_TRANSITION,
     DOMAIN,
+    MUSIC_PRESET_ID,
     SERVICE_APPLY_PRESET,
     SERVICE_START_DYNAMIC_SCENE,
     SERVICE_STOP_DYNAMIC_SCENES_FOR_TARGETS,
@@ -59,6 +63,10 @@ _INTERNAL = contextvars.ContextVar("scene_studio_music_internal", default=False)
 
 def runtime_preset_id(scene_id: str) -> str:
     return f"music_{scene_id}"
+
+
+def is_music_scene(scene: dict | None) -> bool:
+    return bool(scene) and (scene.get(ATTR_SCENE_PRESET_ID) == MUSIC_PRESET_ID or bool(scene.get(ATTR_MUSIC)))
 
 
 def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tuple[float, float]] | None:
@@ -124,9 +132,10 @@ def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tupl
 @dataclass
 class MusicSession:
     scene_id: str
-    media_player: str
+    media_player: str | None
     lights: list[str]
     snapshot: dict[str, dict]
+    applied: bool = False  # colors are on the lights (only then there is something to restore)
     album: str | None = None
     track: str | None = None
     last_change: float = 0.0
@@ -154,10 +163,51 @@ class MusicScenes:
         return _INTERNAL.get()
 
     def _music_scenes(self) -> list[dict]:
-        return [s for s in self.store.get_all() if s.get(ATTR_MUSIC)]
+        return [s for s in self.store.get_all() if is_music_scene(s)]
 
     def _player_of(self, scene: dict) -> str | None:
-        return (scene.get(ATTR_MUSIC) or {}).get("media_player")
+        chosen = (scene.get(ATTR_MUSIC) or {}).get("media_player")
+        if chosen:
+            return chosen
+        return self.player_in_area(self._scene_area(scene))
+
+    def _scene_area(self, scene: dict) -> str | None:
+        """Room of the scene entity, otherwise the (first) room of its lights."""
+        registry = er.async_get(self.hass)
+        entity_id = registry.async_get_entity_id("scene", DOMAIN, f"saved_scene_{scene['id']}")
+        entry = registry.async_get(entity_id) if entity_id else None
+        if entry is not None and entry.area_id:
+            return entry.area_id
+        targets = scene.get(ATTR_TARGETS) or {}
+        areas = ensure_list(targets.get("area_id"))
+        if areas:
+            return areas[0]
+        for light in self._scene_lights(scene):
+            area = self._entity_area(light)
+            if area:
+                return area
+        return None
+
+    def _entity_area(self, entity_id: str) -> str | None:
+        entry = er.async_get(self.hass).async_get(entity_id)
+        if entry is None:
+            return None
+        if entry.area_id:
+            return entry.area_id
+        device = dr.async_get(self.hass).async_get(entry.device_id) if entry.device_id else None
+        return device.area_id if device else None
+
+    def player_in_area(self, area_id: str | None) -> str | None:
+        """The speaker of a room: a Sonos if there is one, otherwise any media player."""
+        if not area_id:
+            return None
+        found = []
+        for entry in er.async_get(self.hass).entities.values():
+            if entry.domain != "media_player" or entry.disabled_by:
+                continue
+            if self._entity_area(entry.entity_id) == area_id:
+                found.append((entry.platform != "sonos", entry.entity_id))
+        return sorted(found)[0][1] if found else None
 
     def _scene_lights(self, scene: dict) -> list[str]:
         targets = scene.get(ATTR_TARGETS) or {}
@@ -210,20 +260,13 @@ class MusicScenes:
         attrs = state.attributes
         return f"{attrs.get('media_artist') or ''}|{attrs.get('media_title') or ''}|{attrs.get('media_content_id') or ''}"
 
-    def _fallback_colors(self, scene: dict) -> tuple[list, int]:
-        for preset in PRESET_DATA.get("presets", []):
-            if preset.get("id") == scene.get(ATTR_SCENE_PRESET_ID):
-                return [(l["x"], l["y"]) for l in preset.get("lights", [])], preset.get("bri", 255)
-        return [(0.5, 0.4)], 255
-
-    def _set_runtime_preset(self, scene: dict, colors: list | None) -> str:
-        fallback, bri = self._fallback_colors(scene)
-        preset_id = runtime_preset_id(scene["id"])
+    def _set_runtime_preset(self, scene: dict, colors: list, preset_id: str | None = None) -> str:
+        preset_id = preset_id or runtime_preset_id(scene["id"])
         RUNTIME_PRESETS[preset_id] = {
             "id": preset_id,
-            "name": scene["name"],
-            "bri": bri,
-            "lights": [{"x": x, "y": y} for x, y in (colors or fallback)],
+            "name": scene.get("name", "Music"),
+            "bri": 255,
+            "lights": [{"x": x, "y": y} for x, y in colors],
         }
         return preset_id
 
@@ -247,7 +290,7 @@ class MusicScenes:
     # ------------------------------------------------------------------ subscriptions
     @callback
     def _on_store_change(self, scene_id, scene):
-        if scene is None or not scene.get(ATTR_MUSIC):
+        if scene is None or not is_music_scene(scene):
             session = self.sessions.get(scene_id)
             if session is not None:
                 self._drop(scene_id)
@@ -272,7 +315,7 @@ class MusicScenes:
     @callback
     def _on_light(self, scene_id: str, event: Event):
         session = self.sessions.get(scene_id)
-        if session is None or self.is_internal():
+        if session is None or self.is_internal() or not session.applied:
             return
         if not any(self._is_on(entity_id) for entity_id in session.lights):
             # Lights turned off by hand (or by a motion light): the music scene is over, nothing to restore
@@ -353,9 +396,16 @@ class MusicScenes:
         session.album = album
         session.track = self._track_key(state) if self._playing(player) else None
         session.last_change = time.monotonic()
+        session.applied = previous is not None and previous.applied
         self.sessions[scene_id] = session
-        preset_id = self._set_runtime_preset(scene, colors)
+        self._watch_lights(session)
+        if colors:
+            await self._start_lights(scene, session, colors)
+        _LOGGER.debug("Music scene %s selected (%s)", scene["name"], "cover colors" if colors else "waiting for a cover")
 
+    async def _start_lights(self, scene: dict, session: MusicSession, colors: list) -> None:
+        """Put the cover colors on the lights of the scene (static or dynamic, like any scene)."""
+        preset_id = self._set_runtime_preset(scene, colors)
         service, data = build_service_call(scene)
         data[ATTR_SCENE_PRESET_ID] = preset_id
         token = _INTERNAL.set(True)
@@ -367,8 +417,28 @@ class MusicScenes:
             await self.hass.services.async_call(DOMAIN, service, data, blocking=True)
         finally:
             _INTERNAL.reset(token)
-        self._watch_lights(session)
-        _LOGGER.debug("Music scene %s active (%s colors)", scene["name"], "cover" if colors else "fallback")
+        session.applied = True
+
+    async def async_adhoc_preset(self, targets: dict) -> str | None:
+        """Preset "Music" applied directly (presets tab, automations): the current cover of the
+        speaker in the room of these lights. None if no music is playing there."""
+        entity_ids = ensure_list(targets.get("entity_id"))
+        lights = resolve_targets(
+            self.hass,
+            entity_ids,
+            ensure_list(targets.get("device_id")),
+            ensure_list(targets.get("area_id")),
+            ensure_list(targets.get("floor_id")),
+            ensure_list(targets.get("label_id")),
+        )
+        areas = ensure_list(targets.get("area_id")) or [a for a in (self._entity_area(l) for l in lights) if a]
+        for area in dict.fromkeys(areas):
+            player = self.player_in_area(area)
+            if player and self._playing(player):
+                colors = await self._colors_from_cover(f"adhoc_{player}", self.hass.states.get(player))
+                if colors:
+                    return self._set_runtime_preset({"name": "Music"}, colors, f"music_adhoc_{player}")
+        return None
 
     async def _colors_from_cover(self, scene_id: str, state) -> list | None:
         picture = state.attributes.get("entity_picture") if state is not None else None
@@ -432,9 +502,14 @@ class MusicScenes:
         preset_id = runtime_preset_id(scene_id)
         if new_cover:
             colors = await self._colors_from_cover(scene_id, state)
+            if colors and not session.applied:
+                await self._start_lights(scene, session, colors)
+                return
             if colors:
                 preset_id = self._set_runtime_preset(scene, colors)
             # colorless cover: keep the colors we have, but still move them on
+        if not session.applied:
+            return
         on = [entity_id for entity_id in session.lights if self._is_on(entity_id)]
         if not on or preset_id not in RUNTIME_PRESETS:
             return
@@ -464,7 +539,7 @@ class MusicScenes:
         if session is None:
             return
         self._drop(scene_id)
-        if not restore:
+        if not restore or not session.applied:
             return
         token = _INTERNAL.set(True)
         try:

@@ -22,7 +22,7 @@ from .websocket_api import async_setup_websocket_api
 from .saved_scenes import SavedSceneStore, build_service_call
 from .optional_lights import OptionalLights, split_optional
 from .migrate import async_import_scene_presets
-from .music_scenes import MusicScenes, AUTO_START_OPTIONS, AUTO_START_NEVER, runtime_preset_id
+from .music_scenes import MusicScenes, AUTO_START_OPTIONS, AUTO_START_NEVER, runtime_preset_id, is_music_scene
 from .file_utils import RUNTIME_PRESETS
 
 PLATFORMS = ["scene"]
@@ -74,7 +74,7 @@ STOP_DYNAMIC_SCENE_SCHEMA = vol.Schema({
 })
 
 MUSIC_SCHEMA = vol.Schema({
-    vol.Required("media_player"): cv.entity_domain("media_player"),
+    vol.Optional("media_player"): cv.entity_domain("media_player"),  # default: speaker of the room
     vol.Optional("auto_start", default=AUTO_START_NEVER): vol.In(AUTO_START_OPTIONS),
     vol.Optional("when_on", default=False): cv.boolean,
 })
@@ -153,6 +153,11 @@ async def async_setup(hass, config):
     async def apply_preset_service(call):
         preset_id = call.data.get(ATTR_SCENE_PRESET_ID)
         targets = call.data.get(ATTR_TARGETS)
+        if preset_id == MUSIC_PRESET_ID:
+            # Colors of the cover playing in the room right now; no music, nothing happens
+            preset_id = await music_scenes.async_adhoc_preset(targets)
+            if preset_id is None:
+                return
         brightness_override = call.data.get(ATTR_BRIGHTNESS)
         transition = call.data.get(ATTR_TRANSITION, 1)
         shuffle = call.data.get(ATTR_SHUFFLE, False)
@@ -199,12 +204,17 @@ async def async_setup(hass, config):
 
 
     async def start_dynamic_scene(call):
-        # always stop any existing actions first
-        await stop_dynamic_scenes_for_targets(call)
-
         preset_id = call.data.get(ATTR_SCENE_PRESET_ID)
         targets = call.data.get(ATTR_TARGETS)
         interval = call.data.get(ATTR_INTERVAL)
+        if preset_id == MUSIC_PRESET_ID:
+            # Colors of the cover playing in the room right now; no music, nothing happens
+            preset_id = await music_scenes.async_adhoc_preset(targets)
+            if preset_id is None:
+                return None
+
+        # always stop any existing actions first
+        await stop_dynamic_scenes_for_targets(call)
 
         brightness_override = call.data.get(ATTR_BRIGHTNESS)
         transition = call.data.get(ATTR_TRANSITION, 1)
@@ -313,12 +323,12 @@ async def async_setup(hass, config):
             raise vol.Invalid(f"Saved scene '{scene_id}' not found.")
 
         override = call.data.get(ATTR_TARGETS)
-        if scene.get("music") and not override:
+        if is_music_scene(scene) and not override:
             await music_scenes.async_activate(scene)
             return
 
         service, service_data = build_service_call(scene, call.data.get(ATTR_DYNAMIC))
-        if scene.get("music") and runtime_preset_id(scene_id) in RUNTIME_PRESETS:
+        if is_music_scene(scene) and runtime_preset_id(scene_id) in RUNTIME_PRESETS:
             # A lamp mode of a music scene shows the current cover colors
             service_data[ATTR_SCENE_PRESET_ID] = runtime_preset_id(scene_id)
         if override:

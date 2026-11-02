@@ -15,5 +15,6 @@ export type Preset = {
     custom?: boolean,
     overridden?: boolean,
     hidden?: boolean,
-    replacedBy?: string
+    replacedBy?: string,
+    music?: boolean
 }

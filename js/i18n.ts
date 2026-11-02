@@ -130,10 +130,9 @@ const EN = {
     new_from_photo: "New preset from a photo",
     from_photo: "Preset from a photo",
     photo_new_option: "New preset - or choose a preset to change its picture",
-    music_heading: "Colors from the album cover",
-    music_help: "While music plays on the speaker, the lights take the colors of the album cover. The preset is used until a cover is known.",
+    music_help: "The lights take the colors of the album cover that is playing. Without music nothing changes.",
     music_player: "Speaker",
-    music_player_none: "Choose a speaker",
+    music_player_auto: "Automatic (speaker of the room)",
     music_auto: "Start by itself when music starts",
     music_auto_never: "Never",
     music_auto_follow: "Follows the music",
@@ -143,7 +142,6 @@ const EN = {
     music_auto_help_always: "Whenever music starts on this speaker.",
     music_when_on: "Also when a light is already on",
     music_end_help: "When the music stops, the lights return to how they were before after 30 s, or turn off.",
-    music_preset: "Preset until a cover is known",
     music_badge: "Music",
 };
 
@@ -279,10 +277,9 @@ const DE: {[K in Key]: string} = {
     new_from_photo: "Neue Vorlage aus Foto",
     from_photo: "Vorlage aus Foto",
     photo_new_option: "Neue Vorlage – oder Vorlage wählen, um ihr Bild zu ändern",
-    music_heading: "Farben vom Albumcover",
-    music_help: "Solange auf dem Lautsprecher Musik läuft, nehmen die Lampen die Farben des Albumcovers an. Bis ein Cover da ist, gilt die Vorlage.",
+    music_help: "Die Lampen nehmen die Farben des Albumcovers an, das gerade läuft. Ohne Musik ändert sich nichts.",
     music_player: "Lautsprecher",
-    music_player_none: "Lautsprecher wählen",
+    music_player_auto: "Automatisch (Lautsprecher im Raum)",
     music_auto: "Bei Musikstart von selbst starten",
     music_auto_never: "Nie",
     music_auto_follow: "Folgt der Musik",
@@ -292,7 +289,6 @@ const DE: {[K in Key]: string} = {
     music_auto_help_always: "Immer, wenn auf diesem Lautsprecher Musik startet.",
     music_when_on: "Auch wenn schon Licht an ist",
     music_end_help: "Endet die Musik, kehren die Lampen nach 30 s zum Zustand vorher zurück – oder gehen aus.",
-    music_preset: "Vorlage, bis ein Cover da ist",
     music_badge: "Musik",
 };
 

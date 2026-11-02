@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 from .test_custom_presets import setup, userdata  # noqa: F401  (fixture and helpers)
 
 PRESET = "e71b2ef3-1b15-4c4b-b036-4b3d6efe58f8"
+MUSIC = "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42"
 PLAYER = "media_player.living_room"
 PLAYER_2 = "media_player.bedroom"
 LIGHTS = ["light.a", "light.b"]
@@ -93,7 +94,7 @@ async def music_setup(hass, monkeypatch):
 
 async def save(hass, name, lights, media_player, **music):
     r = await hass.services.async_call("scene_studio", "save_scene", {
-        "name": name, "preset_id": PRESET, "targets": {"entity_id": lights},
+        "name": name, "preset_id": MUSIC, "targets": {"entity_id": lights},
         "music": {"media_player": media_player, **music},
     }, blocking=True, return_response=True)
     return r["scene"]["id"]
@@ -117,15 +118,50 @@ async def wait(hass, seconds):
     await hass.async_block_till_done()
 
 
-async def test_select_without_music_uses_preset(hass: HomeAssistant, monkeypatch, userdata):
-    await music_setup(hass, monkeypatch)
+async def test_select_without_music_waits_for_a_cover(hass: HomeAssistant, monkeypatch, userdata):
+    fetched = await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
     await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
-    assert all(on(hass, l) for l in LIGHTS)
+    assert not any(on(hass, l) for l in LIGHTS)  # no cover yet: nothing happens
     assert scene_id in music(hass).sessions
-    from custom_components.scene_studio.file_utils import RUNTIME_PRESETS
-    assert RUNTIME_PRESETS[f"music_{scene_id}"]["lights"]  # fallback colors of the preset
+    # Music starts: the cover colors come on
+    player(hass, PLAYER, "playing")
+    await wait(hass, 6)
+    assert fetched == [key("Album 1")]
+    assert all(on(hass, l) for l in LIGHTS)
+
+
+async def test_selected_without_music_is_not_restored(hass: HomeAssistant, monkeypatch, userdata):
+    await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
+    await hass.services.async_call("light", "turn_on", {"entity_id": "light.a"}, blocking=True)
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    player(hass, PLAYER, "paused")
+    await wait(hass, 31)
+    assert on(hass, "light.a")
+
+
+async def test_music_preset_applied_directly(hass: HomeAssistant, monkeypatch, userdata):
+    from homeassistant.helpers import area_registry as ar
+    from homeassistant.helpers import entity_registry as er
+
+    area = ar.async_get(hass).async_create("Living room")
+    registry = er.async_get(hass)
+    entry = registry.async_get_or_create("media_player", "sonos", "living", suggested_object_id="living_room")
+    registry.async_update_entity(entry.entity_id, area_id=area.id)
+    light = registry.async_get_or_create("light", "hue", "a", suggested_object_id="a")
+    registry.async_update_entity(light.entity_id, area_id=area.id)
+    await music_setup(hass, monkeypatch)
+
+    await hass.services.async_call("scene_studio", "apply_preset", {
+        "preset_id": MUSIC, "targets": {"entity_id": ["light.a"]}}, blocking=True)
+    assert not on(hass, "light.a")  # no music: nothing happens
+    player(hass, PLAYER, "playing")
+    await hass.services.async_call("scene_studio", "apply_preset", {
+        "preset_id": MUSIC, "targets": {"entity_id": ["light.a"]}}, blocking=True)
+    assert music(hass).player_in_area(area.id) == PLAYER
+    assert on(hass, "light.a")
 
 
 async def test_music_end_restores_state_before(hass: HomeAssistant, monkeypatch, userdata):
@@ -215,6 +251,7 @@ async def test_other_scene_takes_over_without_restore(hass: HomeAssistant, monke
 async def test_lights_off_ends_music_scene(hass: HomeAssistant, monkeypatch, userdata):
     await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
+    player(hass, PLAYER, "playing")
     await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
     await hass.async_block_till_done()
