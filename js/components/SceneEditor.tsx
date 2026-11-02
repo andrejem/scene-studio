@@ -1,16 +1,18 @@
 // Added by andrejem (2026): scene editor (full screen on phones, side panel on wide screens).
 // Holds its own copy of the scene, so editing no longer depends on what the page currently shows.
 // Replaces the former "last action" dialog: the scene entity id is shown for automations.
+// Music scenes (3.2): with the preset "Music" the colors come from the album cover of a speaker,
+// the editor then shows the speaker and when the scene starts by itself.
 
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import HaIcon from "./hass/building_blocks/HaIcon";
 import {HaTargetSelectorValue} from "./hass/selectors/HaTargetSelector";
 import {Translate} from "../i18n";
 import {Preset} from "../types";
-import {BrightnessField, Collapsible, MoreOptions, Segmented, TargetField, previewBrightness} from "./Controls";
+import {BrightnessField, Collapsible, MoreOptions, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
 import {PresetTile} from "./PresetTile";
 import {
-    DEFAULT_TUNABLES, SavedScene, SetTunable, Tunables, areaName, hasTargets, newId, presetImage,
+    DEFAULT_TUNABLES, MUSIC_PRESET_ID, MusicSettings, SavedScene, SetTunable, Tunables, areaName, hasTargets, newId, presetImage,
     sceneEntityId, tunablesToCall
 } from "../tunables";
 
@@ -24,7 +26,8 @@ export type SceneDraft = {
     exclude: Array<string>,
     keepGroups: Array<string>,
     optional: Array<string>,
-    lightBrightness: {[entityId: string]: number}
+    lightBrightness: {[entityId: string]: number},
+    music?: MusicSettings
 };
 
 type SceneLight = {entity_id: string, name: string, optional: boolean};
@@ -53,6 +56,7 @@ export const SceneEditor: React.FunctionComponent<{
     const [keepGroups, setKeepGroups] = useState<Array<string>>([]);
     const [optional, setOptional] = useState<Array<string>>([]);
     const [lightBrightness, setLightBrightness] = useState<{[entityId: string]: number}>({});
+    const [music, setMusic] = useState<MusicSettings>({media_player: "", auto_start: "never", when_on: false});
     const [sceneLights, setSceneLights] = useState<Array<SceneLight>>([]);
     const [moreOpen, setMoreOpen] = useState(false);
     const [showLeftOut, setShowLeftOut] = useState(false);
@@ -79,6 +83,7 @@ export const SceneEditor: React.FunctionComponent<{
         setKeepGroups(draft.keepGroups);
         setOptional(draft.optional);
         setLightBrightness(draft.lightBrightness);
+        setMusic({media_player: "", auto_start: "never", when_on: false, ...(draft.music ?? {})});
         setMoreOpen(false);
         setShowLeftOut(false);
         setPicker(!draft.presetId);
@@ -143,6 +148,22 @@ export const SceneEditor: React.FunctionComponent<{
             .sort((a, b) => a.name.localeCompare(b.name));
     }, [hass?.areas]);
 
+    // speakers: those of the scene's room first
+    const speakers = useMemo(() => {
+        const roomOf = (entityId: string) => {
+            const entry = hass?.entities?.[entityId];
+            return entry?.area_id ?? hass?.devices?.[entry?.device_id]?.area_id;
+        };
+        return Object.values<any>(hass?.states ?? {})
+            .filter((st: any) => st.entity_id.startsWith("media_player."))
+            .map((st: any) => ({
+                entity_id: st.entity_id,
+                name: st.attributes?.friendly_name ?? st.entity_id,
+                here: !!areaId && roomOf(st.entity_id) === areaId
+            }))
+            .sort((a, b) => Number(b.here) - Number(a.here) || a.name.localeCompare(b.name));
+    }, [hass?.states, hass?.entities, hass?.devices, areaId]); // eslint-disable-line react-hooks/exhaustive-deps
+
     const presetMap = useMemo(() => {
         const map: {[id: string]: Preset} = {};
         presets.forEach(p => {
@@ -171,6 +192,7 @@ export const SceneEditor: React.FunctionComponent<{
 
     const preset = presetMap[presetId];
     const entityId = editing ? sceneEntityId(hass, editing.id) : undefined;
+    const musicOn = presetId === MUSIC_PRESET_ID;
     const canSave = !!name.trim() && !!presetId && hasTargets(targets) && !busy;
 
     const sceneCall = () => {
@@ -241,6 +263,15 @@ export const SceneEditor: React.FunctionComponent<{
             name: name.trim(),
             dynamic: service === "start_dynamic_scene"
         };
+        if (musicOn) {
+            payload.music = {
+                auto_start: music.auto_start ?? "never",
+                when_on: music.auto_start !== "never" && !!music.when_on
+            };
+            if (music.media_player) {
+                payload.music.media_player = music.media_player;
+            }
+        }
         setBusy(true);
         setError("");
         try {
@@ -387,6 +418,52 @@ export const SceneEditor: React.FunctionComponent<{
                             </div>
 
                             <TargetField hass={hass} t={t} value={targets} onChange={setTargets}/>
+
+                            {
+                                musicOn &&
+                                <div className={"sp-field scene-music"}>
+                                    <div className={"sp-strong"}>{t("music_heading")}</div>
+                                    <div className={"sp-secondary sp-small"}>{t("music_help")}</div>
+                                    <label className={"sp-field"}>
+                                        <span className={"sp-field-label"}>{t("music_player")}</span>
+                                        <select
+                                            className={"sp-input scene-music-player"}
+                                            value={music.media_player ?? ""}
+                                            onChange={(e) => setMusic({...music, media_player: e.target.value})}
+                                        >
+                                            <option value={""}>{t("music_player_auto")}</option>
+                                            {speakers.map(sp => (
+                                                <option key={"mp_" + sp.entity_id} value={sp.entity_id}>{sp.name}</option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <span className={"sp-field-label"}>{t("music_auto")}</span>
+                                    <Segmented
+                                        className={"scene-music-auto"}
+                                        options={[
+                                            {value: "never", label: t("music_auto_never")},
+                                            {value: "follow", label: t("music_auto_follow")},
+                                            {value: "always", label: t("music_auto_always")}
+                                        ]}
+                                        value={music.auto_start ?? "never"}
+                                        onChange={(v) => setMusic({...music, auto_start: v as MusicSettings["auto_start"]})}
+                                    />
+                                    <div className={"sp-secondary sp-small"}>
+                                        {t(music.auto_start === "follow" ? "music_auto_help_follow" : music.auto_start === "always" ? "music_auto_help_always" : "music_auto_help_never")}
+                                    </div>
+                                    {
+                                        music.auto_start !== "never" &&
+                                        <SwitchRow
+                                            label={t("music_when_on")}
+                                            value={!!music.when_on}
+                                            onChange={(v) => setMusic({...music, when_on: v})}
+                                            indent
+                                            className={"scene-music-when-on"}
+                                        />
+                                    }
+                                    <div className={"sp-secondary sp-small"}>{t("music_end_help")}</div>
+                                </div>
+                            }
 
                             <Segmented
                                 options={[{value: "once", label: t("mode_once")}, {value: "dynamic", label: t("mode_dynamic")}]}
@@ -576,6 +653,7 @@ export function draftFromScene(scene: SavedScene, tun: Tunables, areaId: string 
         exclude: scene.exclude ?? [],
         keepGroups: scene.keep_groups ?? [],
         optional: scene.optional ?? [],
-        lightBrightness: scene.light_brightness ?? {}
+        lightBrightness: scene.light_brightness ?? {},
+        music: scene.music
     };
 }

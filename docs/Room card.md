@@ -7,7 +7,8 @@
 - **Room slider** – tap to switch all lights of the room on/off, drag for brightness, hold for details.
 - **Scene tiles** – every `scene.*` entity assigned to the area, with the preset image for saved
   scenes. Tap activates the scene, **double tap** applies a dynamic saved scene once (static),
-  hold opens the details. The active scene is outlined and checked, dynamic scenes show an icon.
+  hold opens the details. The active scene is outlined and checked, dynamic scenes show an icon,
+  [music scenes](Music%20scenes.md) a note.
 - **Light rows** – light helpers (light groups) of the room as full-width rows, expandable (›) to
   their member lights; lights that are not part of a helper get their own row. Single lights are
   shown two per line (`light_columns`). Each row works like the room slider (tap / drag / hold).

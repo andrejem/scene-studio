@@ -212,6 +212,20 @@
       ]
     },
     {
+      "id": "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42",
+      "categoryId": "aa328226-a847-4365-96f4-7d29fe4388bb",
+      "name": "Music",
+      "img": "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42.jpeg",
+      "bri": 255,
+      "music": true,
+      "lights": [
+        {
+          "x": 0.3227,
+          "y": 0.329
+        }
+      ]
+    },
+    {
       "id": "d648408d-58ab-4768-b192-47ce06dc8e61",
       "categoryId": "2f515d38-0dee-4988-9ea5-4baa560ea08c",
       "name": "Blossom",

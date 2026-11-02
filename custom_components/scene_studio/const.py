@@ -1,4 +1,5 @@
-# Modified by andrejem (2026): constants for per-light timing, saved scenes, room card and exclude.
+# Modified by andrejem (2026): constants for per-light timing, saved scenes, room card, exclude
+# and the music preset.
 
 DOMAIN = "scene_studio"
 NAME = "Scene Studio"
@@ -46,3 +47,6 @@ ATTR_LIGHT_BRIGHTNESS = "light_brightness"
 
 # Added by andrejem (2026): import from Scene Presets
 SERVICE_IMPORT_SCENE_PRESETS = "import_scene_presets"
+
+# Added by andrejem (2026): built-in preset "Music" - colors from the album cover of a speaker
+MUSIC_PRESET_ID = "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42"

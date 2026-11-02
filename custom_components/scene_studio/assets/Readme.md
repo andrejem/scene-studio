@@ -62,6 +62,12 @@ scenes, automations and service calls.
 <img src="./palettes/b6f58e22-677f-4670-8677-3dea4ac60383.svg" height="100"/>
 
 `b6f58e22-677f-4670-8677-3dea4ac60383`
+#### Music
+<img src="./b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42.jpeg" height="256"/>
+<br/>
+No fixed colors: the colors come from the album cover that is playing ([music scenes](../../../docs/Music%20scenes.md)).
+
+`b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42`
 
 ## Sunrise
 

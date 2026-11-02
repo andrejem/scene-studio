@@ -20,6 +20,11 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   - `migrate.py` - import from Scene Presets (saved scenes, own presets, scene entities)
   - `scene.py` - scene platform, one entity per saved scene
   - `optional_lights.py` - optional lights that join an active scene when turned on
+  - `music_scenes.py` - music scenes: saved scenes with the preset Music (`MUSIC_PRESET_ID`) take the
+    colors of the album cover of a speaker. Colors live in `RUNTIME_PRESETS` (`file_utils.py`,
+    `music_<scene id>`), which `apply_preset` checks first. Sessions per scene: snapshot of the lights,
+    auto start (`never`/`follow`/`always`, `when_on`), cover/track changes, return to the snapshot
+    30 s after the music stops. Other scenes on the same lights end a session (`release_lights`).
   - `presets.py` - applies a preset to a list of light entities
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start)
   - `color_management.py`, `color_temperature.py` - color selection and CT fallback

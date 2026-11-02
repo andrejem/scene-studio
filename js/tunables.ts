@@ -31,7 +31,18 @@ export type SavedScene = {
     preset_id: string,
     targets: HaTargetSelectorValue,
     dynamic: boolean,
+    music?: MusicSettings,
     [key: string]: any
+};
+
+/** Built-in preset "Music": the colors come from the album cover of a speaker (added in 3.2). */
+export const MUSIC_PRESET_ID = "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42";
+
+/** Settings of a music scene; without media_player the speaker of the scene's room is used. */
+export type MusicSettings = {
+    media_player?: string,
+    auto_start?: "never" | "follow" | "always",
+    when_on?: boolean
 };
 
 export const toList = (value: any): Array<string> => {

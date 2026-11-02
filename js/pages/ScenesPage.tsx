@@ -6,7 +6,7 @@ import {Translate} from "../i18n";
 import {NewTile, PresetTile} from "../components/PresetTile";
 import {useLocalStorage} from "../hooks/useLocalStorage";
 import {RunningScene} from "../components/RunningStrip";
-import {SavedScene, areaName, entityAreaId, presetImage, sceneAreaId, sceneEntityId, stripRoomName} from "../tunables";
+import {MUSIC_PRESET_ID, SavedScene, areaName, entityAreaId, presetImage, sceneAreaId, sceneEntityId, stripRoomName} from "../tunables";
 
 const NO_ROOM = "__none__";
 
@@ -47,7 +47,7 @@ export const ScenesPage: React.FunctionComponent<{
         const ids = new Set<string>();
         groups.forEach(g => {
             const runningHere = g.scenes.find(({scene}) => scene.dynamic && running.some(r =>
-                r.parameters?.preset_id === scene.preset_id &&
+                (r.parameters?.preset_id === scene.preset_id || r.parameters?.preset_id === "music_" + scene.id) &&
                 (r.parameters?.light_entity_ids ?? []).some((e: string) => (entityAreaId(hass, e) ?? NO_ROOM) === g.key)
             ));
             if (runningHere) {
@@ -156,7 +156,8 @@ export const ScenesPage: React.FunctionComponent<{
                                     actionIcon={"mdi:pencil"}
                                     actionLabel={t("edit")}
                                     onActionClick={() => onEdit(scene)}
-                                    badge={scene.dynamic ? t("badge_dynamic") : undefined}
+                                    badge={scene.preset_id === MUSIC_PRESET_ID ? t("music_badge") : (scene.dynamic ? t("badge_dynamic") : undefined)}
+                                    badgeIcon={scene.preset_id === MUSIC_PRESET_ID ? "mdi:music-note" : undefined}
                                     active={activeIds.has(scene.id)}
                                 />
                             ))}

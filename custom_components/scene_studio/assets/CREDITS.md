@@ -8,7 +8,9 @@ the colors of each preset were taken from its photo.
 - Photos from Wikimedia Commons are used under the Creative Commons license named in the table. The
   cropped versions in this folder are published under the same license.
 - The pictures of the presets in the category *Basics* are drawings by Sören Beye from
-  [Scene Presets](https://github.com/Hypfer/hass-scene_presets) (Apache License 2.0).
+  [Scene Presets](https://github.com/Hypfer/hass-scene_presets) (Apache License 2.0), except
+  *Music* (`b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42.jpeg`), drawn for Scene Studio in the same style
+  (Apache License 2.0).
 
 Photographers keep the copyright of their photos. If you are the author of one of these photos and
 want it credited differently or removed, please open an issue.

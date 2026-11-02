@@ -130,6 +130,20 @@ const EN = {
     new_from_photo: "New preset from a photo",
     from_photo: "Preset from a photo",
     photo_new_option: "New preset - or choose a preset to change its picture",
+    music_heading: "Music",
+    music_help: "The lights take the colors of the album cover that is playing. Without music nothing changes.",
+    music_player: "Speaker",
+    music_player_auto: "Automatic (speaker of the room)",
+    music_auto: "Start by itself when music starts",
+    music_auto_never: "Never",
+    music_auto_follow: "Follow",
+    music_auto_always: "Always",
+    music_auto_help_never: "Only when you select the scene.",
+    music_auto_help_follow: "When music starts here while a music scene is active in another room, e.g. when the music follows you from room to room.",
+    music_auto_help_always: "Whenever music starts on this speaker.",
+    music_when_on: "Also when a light is already on",
+    music_end_help: "When the music stops, the lights return to how they were before after 30 s, or turn off.",
+    music_badge: "Music",
 };
 
 type Key = keyof typeof EN;
@@ -264,6 +278,20 @@ const DE: {[K in Key]: string} = {
     new_from_photo: "Neue Vorlage aus Foto",
     from_photo: "Vorlage aus Foto",
     photo_new_option: "Neue Vorlage – oder Vorlage wählen, um ihr Bild zu ändern",
+    music_heading: "Musik",
+    music_help: "Die Lampen nehmen die Farben des Albumcovers an, das gerade läuft. Ohne Musik ändert sich nichts.",
+    music_player: "Lautsprecher",
+    music_player_auto: "Automatisch (Lautsprecher im Raum)",
+    music_auto: "Bei Musikstart von selbst starten",
+    music_auto_never: "Nie",
+    music_auto_follow: "Folgen",
+    music_auto_always: "Immer",
+    music_auto_help_never: "Nur wenn du die Szene wählst.",
+    music_auto_help_follow: "Wenn hier Musik startet, während in einem anderen Raum eine Musik-Szene läuft – z. B. wenn die Musik dir von Raum zu Raum folgt.",
+    music_auto_help_always: "Immer, wenn auf diesem Lautsprecher Musik startet.",
+    music_when_on: "Auch wenn schon Licht an ist",
+    music_end_help: "Endet die Musik, kehren die Lampen nach 30 s zum Zustand vorher zurück – oder gehen aus.",
+    music_badge: "Musik",
 };
 
 export type Translate = (key: Key, vars?: {[name: string]: string | number}) => string;

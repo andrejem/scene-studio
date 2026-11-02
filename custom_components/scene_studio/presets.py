@@ -1,9 +1,9 @@
-# Modified by andrejem (2026): optional brightness per light (light_brightness).
+# Modified by andrejem (2026): optional brightness per light (light_brightness), runtime presets.
 
 import voluptuous as vol
 import asyncio
 import logging
-from .file_utils import PRESET_DATA
+from .file_utils import PRESET_DATA, RUNTIME_PRESETS
 from .color_management import *
 from .color_temperature import find_closest_ct_match
 from .util import light_brightness_for
@@ -21,8 +21,8 @@ async def apply_preset(
     brightness_override=None,
     light_brightness=None,
 ):
-    preset_data = None
-    for preset in PRESET_DATA.get("presets", []):
+    preset_data = RUNTIME_PRESETS.get(preset_id)
+    for preset in [] if preset_data else PRESET_DATA.get("presets", []):
         if preset.get("id") == preset_id:
             preset_data = preset
             break

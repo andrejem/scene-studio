@@ -1,4 +1,4 @@
-# Added by andrejem (2026): one scene entity per saved scene.
+# Added by andrejem (2026): one scene entity per saved scene (attribute music for music scenes).
 
 import logging
 from typing import Any
@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, SERVICE_ACTIVATE_SAVED_SCENE, ATTR_DYNAMIC_SCENE_ID
 from .file_utils import PRESET_DATA
+from .music_scenes import is_music_scene
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class SavedSceneEntity(Scene):
             "saved_scene_id": self._scene["id"],
             "preset_id": self._scene.get("preset_id"),
             "dynamic": self._scene.get("dynamic", False),
+            "music": is_music_scene(self._scene),
         }
 
     @callback

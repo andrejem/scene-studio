@@ -1,7 +1,7 @@
 # Modified by andrejem (2026): added scene_studio/get_saved_scenes and
 # scene_studio/resolve_targets (lights of a scene, for brightness per light) commands,
 # commands for presets created in the panel and replaced preset images (admin only),
-# import from Scene Presets
+# import from Scene Presets, active music scenes (get_music_scenes)
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -40,6 +40,15 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
         connection.send_result(msg["id"], {"saved_scenes": scenes})
 
     websocket_api.async_register_command(_hass, ws_get_saved_scenes)
+
+    @websocket_api.websocket_command({vol.Required("type"): "scene_studio/get_music_scenes"})
+    @websocket_api.callback
+    def ws_get_music_scenes(hass, connection, msg) -> None:
+        """Active music scenes with their media player, album and current colors."""
+        music = hass.data.get("scene_studio", {}).get("music_scenes")
+        connection.send_result(msg["id"], {"active": music.get_state() if music else {}})
+
+    websocket_api.async_register_command(_hass, ws_get_music_scenes)
 
     @websocket_api.websocket_command(
         {

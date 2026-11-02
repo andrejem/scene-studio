@@ -15,7 +15,11 @@ export const Segmented: React.FunctionComponent<{
     className?: string
 }> = ({options, value, onChange, className}) => {
     return (
-        <div className={"sp-seg " + (className ?? "")} role={"tablist"}>
+        <div
+            className={"sp-seg " + (className ?? "")}
+            role={"tablist"}
+            style={options.length !== 2 ? {gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`} : undefined}
+        >
             {options.map(o => (
                 <button
                     key={o.value}

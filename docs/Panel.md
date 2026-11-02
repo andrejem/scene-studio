@@ -6,7 +6,8 @@ Open **Scene Studio** in the Home Assistant sidebar. The panel has two tabs:
 - **Presets** – all presets, to try them on your lights and to save new scenes.
 
 Running dynamic scenes are shown on top of both tabs (*Running · dynamic*) with the time between
-color changes and a **Stop** button.
+color changes and a **Stop** button. A running [music scene](Music%20scenes.md) shows its name and
+the cover that is playing.
 
 The panel follows your Home Assistant theme (light or dark) and language (English or German).
 On wide screens (900 px and more) the rooms are listed on the left and the scene editor opens as a
@@ -32,7 +33,8 @@ side panel; on phones the room chips are on top and the editor fills the screen.
 - **All** shows every room; a room chip (or the room list on wide screens) shows one room only.
 - On the tiles, the room name at the start of a scene name is left out (*Living room Relax* is shown
   as *Relax* below *Living room*).
-- **Tap** a tile to activate the scene. Dynamic scenes have a *dynamic* badge.
+- **Tap** a tile to activate the scene. Dynamic scenes have a *dynamic* badge, music scenes a *Music*
+  badge.
 - The scene that was activated last in a room is **outlined** while lights of the room are on, or
   while it is running as dynamic scene.
 - The **pencil** opens the scene editor, **New scene** (button or the dashed tile of a room) creates one.
@@ -69,7 +71,8 @@ The editor works on its own copy of the scene; the *Presets* tab is not changed 
 |---|---|
 | **Name** | Name of the scene and its scene entity |
 | **Room** | Area of the scene entity (admins). Same as setting the area in the entity settings |
-| **Preset** | **Change** opens the preset picker (search, favorites first) |
+| **Preset** | **Change** opens the preset picker (search, favorites first). The preset **Music** makes it a [music scene](Music%20scenes.md) |
+| **Music** | Only with the preset Music: speaker, *Start by itself when music starts*, *Also when a light is already on* |
 | **Apply to** | The lights of the scene |
 | **Once / Dynamic**, **Brightness**, **More options** | As in the presets tab |
 | **Lights of this scene** | Brightness per light, *Only if on*, *Leave out*, groups as one light – see [Lights of a scene](Lights%20of%20a%20scene.md) |
