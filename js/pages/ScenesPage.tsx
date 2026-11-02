@@ -156,7 +156,7 @@ export const ScenesPage: React.FunctionComponent<{
                                     actionIcon={"mdi:pencil"}
                                     actionLabel={t("edit")}
                                     onActionClick={() => onEdit(scene)}
-                                    badge={scene.dynamic ? t("badge_dynamic") : undefined}
+                                    badge={scene.music ? t("music_badge") : (scene.dynamic ? t("badge_dynamic") : undefined)}
                                     active={activeIds.has(scene.id)}
                                 />
                             ))}

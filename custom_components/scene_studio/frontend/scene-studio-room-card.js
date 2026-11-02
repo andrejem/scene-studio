@@ -2,6 +2,7 @@
 // One card per area: room brightness, scene tiles with preset images, light rows
 // (light helpers expandable to their member lights) and the Raumlicht motion switch.
 // Everything is derived from the area, so new scenes and lights show up automatically.
+// Music scenes (3.2) carry a note badge.
 
 (async () => {
 // The card borrows Lit from Home Assistant's own elements. This module is loaded early as
@@ -477,7 +478,9 @@ class SceneStudioRoomCard extends LitElement {
       >
         ${pic ? "" : html`<ha-icon class="noimg" icon=${st?.attributes?.icon || "mdi:palette"}></ha-icon>`}
         <div class="badges">
-          <span>${dynamic ? html`<ha-icon icon="mdi:motion-play-outline"></ha-icon>` : ""}</span>
+          <span>${st?.attributes?.music
+            ? html`<ha-icon icon="mdi:music-note"></ha-icon>`
+            : dynamic ? html`<ha-icon icon="mdi:motion-play-outline"></ha-icon>` : ""}</span>
           <span>${active ? html`<ha-icon icon="mdi:check-circle"></ha-icon>` : ""}</span>
         </div>
         <div class="tname">${this._sceneLabel(entityId, m.sceneToRl, m.roomName)}</div>

@@ -31,7 +31,15 @@ export type SavedScene = {
     preset_id: string,
     targets: HaTargetSelectorValue,
     dynamic: boolean,
+    music?: MusicSettings,
     [key: string]: any
+};
+
+/** Music scene: colors from the album cover of a media player (added in 3.2). */
+export type MusicSettings = {
+    media_player: string,
+    auto_start?: "never" | "follow" | "always",
+    when_on?: boolean
 };
 
 export const toList = (value: any): Array<string> => {
