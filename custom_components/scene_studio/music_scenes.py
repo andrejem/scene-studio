@@ -9,6 +9,7 @@ import colorsys
 import contextvars
 import functools
 import io
+import math
 import logging
 import time
 from dataclasses import dataclass, field
@@ -46,8 +47,9 @@ AUTO_START_ALWAYS = "always"
 AUTO_START_OPTIONS = (AUTO_START_NEVER, AUTO_START_FOLLOW, AUTO_START_ALWAYS)
 
 STOP_DELAY = 30  # seconds without music before the lights return (track changes, hand-overs)
-MIN_CHANGE_INTERVAL = 120  # seconds between two cover changes
+MIN_CHANGE_INTERVAL = 5  # seconds: skipping through tracks does not make the lights flicker
 COVER_TRANSITION = 3
+TRACK_TRANSITION = 2  # new track, same cover: the colors move to other lamps
 RESTORE_TRANSITION = 2
 MAX_COLORS = 5
 
@@ -60,37 +62,59 @@ def runtime_preset_id(scene_id: str) -> str:
 
 
 def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tuple[float, float]] | None:
-    """Dominant, colorful colors of a cover as xy. None if the cover has no usable color."""
+    """Dominant, colorful colors of a cover as xy. None if the cover has no usable color.
+
+    Colorful pixels are put into hue bins weighted by saturation x value, so small but vivid
+    accents count and greys, black and white are ignored. Covers with only one or two colors get
+    close variants, so a dynamic scene still has something to change between.
+    """
     from PIL import Image  # Pillow ships with Home Assistant
 
     image = Image.open(io.BytesIO(data)).convert("RGB")
     image.thumbnail((96, 96))
-    quantized = image.quantize(colors=16, method=Image.Quantize.MEDIANCUT)
-    palette = quantized.getpalette() or []
-    counts = sorted(quantized.getcolors() or [], reverse=True)
-    total = sum(count for count, _ in counts) or 1
-
-    candidates = []
-    for count, index in counts:
-        r, g, b = palette[index * 3: index * 3 + 3]
+    pixels = list(image.getdata())
+    bins = 24
+    weight = [0.0] * bins
+    hue_x = [0.0] * bins
+    hue_y = [0.0] * bins
+    sat_sum = [0.0] * bins
+    colorful = 0
+    for r, g, b in pixels:
         hue, sat, val = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-        if val < 0.18 or sat < 0.22:
+        if sat < 0.25 or val < 0.25:
             continue  # black, white, grey: nothing a lamp can show nicely
-        candidates.append((count, hue, sat))
-
-    picked: list[tuple[int, float, float]] = []
-    for count, hue, sat in candidates:
-        if all(min(abs(hue - h), 1 - abs(hue - h)) >= 0.06 for _, h, _ in picked):
-            picked.append((count, hue, sat))
-        if len(picked) >= max_colors:
-            break
-
-    if not picked or sum(count for count, _, _ in picked) / total < 0.08:
+        colorful += 1
+        w = sat * val
+        k = int(hue * bins) % bins
+        weight[k] += w
+        hue_x[k] += w * math.cos(2 * math.pi * hue)
+        hue_y[k] += w * math.sin(2 * math.pi * hue)
+        sat_sum[k] += w * sat
+    if not pixels or colorful / len(pixels) < 0.03:
         return None
 
+    order = sorted(range(bins), key=lambda k: -weight[k])
+    top = weight[order[0]]
+    picked = []
+    for k in order:
+        if weight[k] < top * 0.03 or len(picked) >= max_colors:
+            break
+        if any(min(abs(k - p), bins - abs(k - p)) < 2 for p in picked):
+            continue  # too close to a color we already have
+        picked.append(k)
+
+    hsv = []
+    for k in picked:
+        hue = (math.atan2(hue_y[k], hue_x[k]) / (2 * math.pi)) % 1
+        sat = min(1.0, sat_sum[k] / weight[k] * 1.15 + 0.1)
+        hsv.append((hue, sat))
+    if len(hsv) < 3:
+        for hue, sat in list(hsv):
+            hsv.append(((hue + 0.035) % 1, sat))
+            hsv.append(((hue - 0.035) % 1, max(0.35, sat * 0.75)))
+
     colors = []
-    for _, hue, sat in picked:
-        sat = min(1.0, sat * 1.25 + 0.1)
+    for hue, sat in hsv[: max(max_colors, 3)]:
         r, g, b = colorsys.hsv_to_rgb(hue, sat, 1.0)
         x, y = color_util.color_RGB_to_xy(round(r * 255), round(g * 255), round(b * 255))
         colors.append((round(x, 4), round(y, 4)))
@@ -104,6 +128,7 @@ class MusicSession:
     lights: list[str]
     snapshot: dict[str, dict]
     album: str | None = None
+    track: str | None = None
     last_change: float = 0.0
     stop_timer: object | None = None
     change_timer: object | None = None
@@ -167,18 +192,23 @@ class MusicScenes:
 
     @staticmethod
     def _album_key(state) -> str | None:
+        """Identifies the cover. The access token in the picture URL changes, the cache key does not."""
         if state is None:
             return None
         attrs = state.attributes
-        album = attrs.get("media_album_name")
-        if album:
-            return f"{attrs.get('media_artist') or attrs.get('media_album_artist') or ''}|{album}"
         picture = attrs.get("entity_picture")
-        if not picture:
+        if picture:
+            parts = urlsplit(picture)
+            return f"{parts.path}|{parse_qs(parts.query).get('cache', [''])[0]}"
+        album = attrs.get("media_album_name")
+        return f"{attrs.get('media_artist') or ''}|{album}" if album else None
+
+    @staticmethod
+    def _track_key(state) -> str | None:
+        if state is None:
             return None
-        # The access token in the picture URL changes over time, the cache key does not
-        parts = urlsplit(picture)
-        return f"{parts.path}|{parse_qs(parts.query).get('cache', [''])[0]}"
+        attrs = state.attributes
+        return f"{attrs.get('media_artist') or ''}|{attrs.get('media_title') or ''}|{attrs.get('media_content_id') or ''}"
 
     def _fallback_colors(self, scene: dict) -> tuple[list, int]:
         for preset in PRESET_DATA.get("presets", []):
@@ -266,7 +296,7 @@ class MusicScenes:
                     if session.stop_timer is not None:
                         session.stop_timer()
                         session.stop_timer = None
-                    if self._album_key(new) != session.album:
+                    if self._album_key(new) != session.album or self._track_key(new) != session.track:
                         self._schedule_cover(scene)
                 elif was_playing and session.stop_timer is None:
                     session.stop_timer = async_call_later(
@@ -321,6 +351,7 @@ class MusicScenes:
         if colors is None and self._playing(player):
             colors = await self._colors_from_cover(scene_id, state)
         session.album = album
+        session.track = self._track_key(state) if self._playing(player) else None
         session.last_change = time.monotonic()
         self.sessions[scene_id] = session
         preset_id = self._set_runtime_preset(scene, colors)
@@ -389,24 +420,30 @@ class MusicScenes:
         if session is None or scene is None:
             return
         session.change_timer = None
-        state = self.hass.states.get(session.media_player)
-        album = self._album_key(state)
-        if album == session.album or not self._playing(session.media_player):
+        if not self._playing(session.media_player):
             return
-        session.album = album
+        state = self.hass.states.get(session.media_player)
+        album, track = self._album_key(state), self._track_key(state)
+        if album == session.album and track == session.track:
+            return
+        new_cover = album != session.album
+        session.album, session.track = album, track
         session.last_change = time.monotonic()
-        colors = await self._colors_from_cover(scene_id, state)
-        if not colors:
-            return  # colorless cover: keep the colors we have
-        preset_id = self._set_runtime_preset(scene, colors)
+        preset_id = runtime_preset_id(scene_id)
+        if new_cover:
+            colors = await self._colors_from_cover(scene_id, state)
+            if colors:
+                preset_id = self._set_runtime_preset(scene, colors)
+            # colorless cover: keep the colors we have, but still move them on
         on = [entity_id for entity_id in session.lights if self._is_on(entity_id)]
-        if not on:
+        if not on or preset_id not in RUNTIME_PRESETS:
             return
         settings = scene.get("light_brightness")
         token = _INTERNAL.set(True)
         try:
             await apply_preset(
-                self.hass, preset_id, on, COVER_TRANSITION, True, True, scene.get("brightness"),
+                self.hass, preset_id, on, COVER_TRANSITION if new_cover else TRACK_TRANSITION, True, True,
+                scene.get("brightness"),
                 light_brightness={k: v for k, v in (settings or {}).items() if v > 0} or None,
             )
         finally:

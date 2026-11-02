@@ -38,7 +38,7 @@ def test_extract_cover_colors():
     from custom_components.scene_studio.music_scenes import extract_cover_colors
 
     colors = extract_cover_colors(_image([(220, 20, 30), (20, 40, 200)]))
-    assert colors is not None and len(colors) == 2
+    assert colors is not None and len(colors) >= 3  # two colors plus close variants
     assert extract_cover_colors(_image([(128, 128, 128), (10, 10, 10), (250, 250, 250)])) is None
 
 
@@ -99,6 +99,10 @@ async def save(hass, name, lights, media_player, **music):
     return r["scene"]["id"]
 
 
+def key(album, entity_id=PLAYER):
+    return f"/api/media_player_proxy/{entity_id}|{album}"
+
+
 def music(hass):
     return hass.data["scene_studio"]["music_scenes"]
 
@@ -130,7 +134,7 @@ async def test_music_end_restores_state_before(hass: HomeAssistant, monkeypatch,
     player(hass, PLAYER, "playing")
     await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
-    assert fetched == ["Artist|Album 1"]
+    assert fetched == [key("Album 1")]
     from custom_components.scene_studio.file_utils import RUNTIME_PRESETS
     assert RUNTIME_PRESETS[f"music_{scene_id}"]["lights"] == [{"x": x, "y": y} for x, y in COVER]
 
@@ -217,15 +221,37 @@ async def test_lights_off_ends_music_scene(hass: HomeAssistant, monkeypatch, use
     assert scene_id not in music(hass).sessions
 
 
-async def test_new_album_changes_colors_at_most_every_two_minutes(hass: HomeAssistant, monkeypatch, userdata):
+async def test_new_cover_changes_colors_quickly(hass: HomeAssistant, monkeypatch, userdata):
     fetched = await music_setup(hass, monkeypatch)
     scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
     player(hass, PLAYER, "playing")
     await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
     await hass.async_block_till_done()
+    # Skipping through tracks: only the cover that stays is read
     player(hass, PLAYER, "playing", album="Album 2")
-    await hass.async_block_till_done()
-    assert fetched == ["Artist|Album 1"]  # too early
     player(hass, PLAYER, "playing", album="Album 3")
-    await wait(hass, 125)
-    assert fetched == ["Artist|Album 1", "Artist|Album 3"]
+    await hass.async_block_till_done()
+    assert fetched == [key("Album 1")]
+    await wait(hass, 6)
+    assert fetched == [key("Album 1"), key("Album 3")]
+
+
+async def test_new_track_same_cover_moves_colors(hass: HomeAssistant, monkeypatch, userdata):
+    fetched = await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Living music", LIGHTS, PLAYER)
+    player(hass, PLAYER, "playing")
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.async_block_till_done()
+    calls = []
+    import custom_components.scene_studio.music_scenes as ms
+    original = ms.apply_preset
+
+    async def spy(*args, **kwargs):
+        calls.append(args[3])  # transition
+        return await original(*args, **kwargs)
+
+    monkeypatch.setattr(ms, "apply_preset", spy)
+    hass.states.async_set(PLAYER, "playing", {**hass.states.get(PLAYER).attributes, "media_title": "Track 2"})
+    await wait(hass, 6)
+    assert fetched == [key("Album 1")]  # same cover, nothing to read
+    assert calls == [ms.TRACK_TRANSITION]
