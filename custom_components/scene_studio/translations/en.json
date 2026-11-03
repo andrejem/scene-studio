@@ -1,0 +1,284 @@
+{
+  "title": "Scene Studio",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Scene Studio",
+        "description": "Set up Scene Studio. Scenes, presets and the room card are configured in the Scene Studio panel afterwards."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Scene Studio is already set up. Only a single instance is possible."
+    }
+  },
+  "services": {
+    "apply_preset": {
+      "name": "Apply preset",
+      "description": "Apply a scene preset to specified light entities",
+      "fields": {
+        "preset_id": {
+          "name": "Preset",
+          "description": "The preset ID to use"
+        },
+        "targets": {
+          "name": "Targets",
+          "description": "What to apply the preset to"
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Override the presets brightness"
+        },
+        "transition": {
+          "name": "Transition",
+          "description": "Transition duration between states"
+        },
+        "shuffle": {
+          "name": "Shuffle",
+          "description": "Shuffle the colors before applying"
+        },
+        "smart_shuffle": {
+          "name": "Smart shuffle",
+          "description": "Ensure smooth color transitions when shuffling"
+        },
+        "exclude": {
+          "name": "Exclude",
+          "description": "Optional. Lights to leave out, e.g. when targeting a whole area. Excluding a group also excludes its members."
+        },
+        "keep_groups": {
+          "name": "Keep groups",
+          "description": "Optional. Light groups that are controlled as one light (all members get the same color) instead of light by light."
+        },
+        "optional": {
+          "name": "Optional lights",
+          "description": "Optional. Lights that take part only if they are on when the scene starts. If one is turned on later while the scene is active, it joins the scene."
+        },
+        "light_brightness": {
+          "name": "Brightness per light",
+          "description": "Optional. Brightness in percent (0-100) for single lights, e.g. light.led_strip: 20. Overrides the scene brightness for these lights; 0 turns the light off when the scene starts. A value for a group also applies to its lights."
+        },
+        "gradient": {
+          "name": "Gradient lamps",
+          "description": "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
+        }
+      }
+    },
+    "get_dynamic_scenes": {
+      "name": "Get dynamic scenes",
+      "description": "Get all currently active dynamic scenes"
+    },
+    "start_dynamic_scene": {
+      "name": "Start dynamic scene",
+      "description": "Start a loop that periodically applies a shuffled scene preset",
+      "fields": {
+        "preset_id": {
+          "name": "Preset",
+          "description": "The preset ID to use"
+        },
+        "targets": {
+          "name": "Targets",
+          "description": "What to apply the preset to"
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Override the presets brightness"
+        },
+        "transition": {
+          "name": "Transition",
+          "description": "Transition duration between states"
+        },
+        "interval": {
+          "name": "Interval",
+          "description": "Time between color changes"
+        },
+        "interval_min": {
+          "name": "Interval min (per light)",
+          "description": "Optional. Enables per-light timing: each light waits a random time between min and max before its next color change"
+        },
+        "interval_max": {
+          "name": "Interval max (per light)",
+          "description": "Optional. Upper bound of the random per-light interval"
+        },
+        "transition_min": {
+          "name": "Transition min (per light)",
+          "description": "Optional. Enables per-light timing: each color change uses a random transition between min and max"
+        },
+        "transition_max": {
+          "name": "Transition max (per light)",
+          "description": "Optional. Upper bound of the random per-light transition"
+        },
+        "exclude": {
+          "name": "Exclude",
+          "description": "Optional. Lights to leave out, e.g. when targeting a whole area. Excluding a group also excludes its members."
+        },
+        "keep_groups": {
+          "name": "Keep groups",
+          "description": "Optional. Light groups that are controlled as one light (all members get the same color) instead of light by light."
+        },
+        "optional": {
+          "name": "Optional lights",
+          "description": "Optional. Lights that take part only if they are on when the scene starts. If one is turned on later while the scene is active, it joins the scene."
+        },
+        "light_brightness": {
+          "name": "Brightness per light",
+          "description": "Optional. Brightness in percent (0-100) for single lights, e.g. light.led_strip: 20. Overrides the scene brightness for these lights; 0 turns the light off when the scene starts. A value for a group also applies to its lights."
+        },
+        "gradient": {
+          "name": "Gradient lamps",
+          "description": "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
+        }
+      }
+    },
+    "stop_dynamic_scene": {
+      "name": "Stop dynamic scene",
+      "description": "Stop a dynamic scene by ID",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "The UUID of the dynamic scene to stop"
+        }
+      }
+    },
+    "stop_dynamic_scenes_for_targets": {
+      "name": "Stop dynamic scenes for targets",
+      "description": "Stops all dynamic scenes that include any of the specified targets",
+      "fields": {
+        "targets": {
+          "name": "Targets",
+          "description": "Targets to stop all dynamic scenes for"
+        }
+      }
+    },
+    "stop_all_dynamic_scenes": {
+      "name": "Stop all dynamic scenes",
+      "description": "Stops all currently running dynamic scenes"
+    },
+    "save_scene": {
+      "name": "Save scene",
+      "description": "Save a preset together with targets and settings as a reusable scene. Creates a scene entity.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Optional. ID of an existing saved scene to overwrite"
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name of the saved scene"
+        },
+        "preset_id": {
+          "name": "Preset",
+          "description": "The preset ID to use"
+        },
+        "targets": {
+          "name": "Targets",
+          "description": "Lights to apply the preset to"
+        },
+        "dynamic": {
+          "name": "Dynamic",
+          "description": "Start a dynamic scene instead of applying the preset once"
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Override the presets brightness"
+        },
+        "transition": {
+          "name": "Transition",
+          "description": "Transition duration between states"
+        },
+        "shuffle": {
+          "name": "Shuffle",
+          "description": "Shuffle the colors before applying"
+        },
+        "smart_shuffle": {
+          "name": "Smart shuffle",
+          "description": "Ensure smooth color transitions when shuffling"
+        },
+        "interval": {
+          "name": "Interval",
+          "description": "Time between color changes"
+        },
+        "interval_min": {
+          "name": "Interval min (per light)",
+          "description": "Optional. Enables per-light timing: each light waits a random time between min and max before its next color change"
+        },
+        "interval_max": {
+          "name": "Interval max (per light)",
+          "description": "Optional. Upper bound of the random per-light interval"
+        },
+        "transition_min": {
+          "name": "Transition min (per light)",
+          "description": "Optional. Enables per-light timing: each color change uses a random transition between min and max"
+        },
+        "transition_max": {
+          "name": "Transition max (per light)",
+          "description": "Optional. Upper bound of the random per-light transition"
+        },
+        "exclude": {
+          "name": "Exclude",
+          "description": "Optional. Lights to leave out, e.g. when targeting a whole area. Excluding a group also excludes its members."
+        },
+        "keep_groups": {
+          "name": "Keep groups",
+          "description": "Optional. Light groups that are controlled as one light (all members get the same color) instead of light by light."
+        },
+        "optional": {
+          "name": "Optional lights",
+          "description": "Optional. Lights that take part only if they are on when the scene starts. If one is turned on later while the scene is active, it joins the scene."
+        },
+        "light_brightness": {
+          "name": "Brightness per light",
+          "description": "Optional. Brightness in percent (0-100) for single lights, e.g. light.led_strip: 20. Overrides the scene brightness for these lights; 0 turns the light off when the scene starts. A value for a group also applies to its lights."
+        },
+        "gradient": {
+          "name": "Gradient lamps",
+          "description": "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
+        },
+        "music": {
+          "name": "Music scene",
+          "description": "Optional. Makes this a music scene: the colors come from the album cover of the media player, the preset is used until a cover is known. auto_start: never (only when selected), follow (when music starts while a music scene is active in another room) or always. By default it starts by itself only if no light of the scene is on; when_on: true starts it anyway."
+        }
+      }
+    },
+    "delete_saved_scene": {
+      "name": "Delete saved scene",
+      "description": "Delete a saved scene and its scene entity",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID of the saved scene"
+        }
+      }
+    },
+    "activate_saved_scene": {
+      "name": "Activate saved scene",
+      "description": "Activate a saved scene (same as turning on its scene entity)",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID of the saved scene"
+        },
+        "dynamic": {
+          "name": "Dynamic",
+          "description": "Optional. Override the saved mode: off applies a dynamic scene once (static), on starts a static scene as dynamic scene"
+        },
+        "targets": {
+          "name": "Targets",
+          "description": "Optional. Apply the saved scene to these lights instead of its own targets (exclude, keep_groups and optional are ignored then). The lights leave running dynamic scenes, the rest of those scenes keeps going."
+        }
+      }
+    },
+    "import_scene_presets": {
+      "name": "Import from Scene Presets",
+      "description": "Brings saved scenes, own presets and replaced pictures over from the Scene Presets integration. Scenes that were imported before are skipped.",
+      "fields": {
+        "take_over_entities": {
+          "name": "Take over scene entities",
+          "description": "Keep entity ID, name, area and labels of the scene entities, so dashboards and automations keep working. Scene Presets is disabled for that (not removed)."
+        },
+        "overwrite": {
+          "name": "Overwrite",
+          "description": "Import scenes and files again even if they exist already."
+        }
+      }
+    }
+  }
+}

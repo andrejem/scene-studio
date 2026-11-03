@@ -43,7 +43,10 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   - `frontend/scene_studio_panel.js` - **built** panel bundle, committed to the repo
   - `frontend/scene-studio-room-card.js` - room card (plain JS, no build step), served and
     auto-loaded via `view.py`; borrows Lit from Home Assistant's own elements
-  - `services.yaml` - service descriptions shown in the HA UI
+  - `services.yaml` - service fields and selectors (names and descriptions as fallback)
+  - `translations/en.json` - texts Home Assistant shows at runtime: config flow (abort reasons) and
+    service names, descriptions and field labels. Custom integrations do not read `strings.json`;
+    `en.json` is the fallback for every language without its own file
 - `js/` - panel source (React + TypeScript), built with webpack into `frontend/`:
   `App.tsx` tabs and data, `pages/ScenesPage.tsx` saved scenes by room, `pages/PresetApplyPage.tsx`
   presets tab, `components/SceneEditor.tsx` scene editor, `components/Controls.tsx` form controls,
@@ -66,6 +69,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   card. New options are optional and default to the current behavior; a deliberate break is noted
   in the release notes.
 - New service parameters are optional and keep the current behavior by default.
+- A new or changed service, service field or config flow text goes into `services.yaml` **and**
+  `translations/en.json` (name and description for every service and field).
+  No curly braces in these texts: hassfest reads `{...}` as a placeholder and fails.
 - Do not use names of Scene Presets (domain, services, panel, card, storage keys, browser storage
   keys): both integrations must work side by side.
 - Update `README.md` and `docs/` together with every functional change. `README.md` is also shown
