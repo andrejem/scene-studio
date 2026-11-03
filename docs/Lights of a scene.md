@@ -40,6 +40,20 @@ members get the same color, and in a dynamic scene the group changes as a whole.
 fixtures that consist of several lights, e.g. two strips left and right of a TV. In the editor,
 groups whose lights are all part of the scene are offered under **Light groups**.
 
+## Gradient lamps
+
+Lamps that show several colors at once – Philips Hue gradient lamps like **Signe**, **Play
+gradient** or the **gradient light strip** connected to Zigbee2MQTT – get **all colors of the preset
+as a gradient** instead of one color. The gradient starts with the color the lamp would get and runs
+smoothly through the others (up to 5). In a dynamic scene the gradient changes with every step, in a
+[music scene](Music%20scenes.md) the lamp shows the colors of the cover.
+
+Scene Studio finds these lamps by itself in the device list of Zigbee2MQTT; there is nothing to set
+up. Home Assistant's light entity knows only one color, so the gradient is sent to Zigbee2MQTT over
+MQTT. In the scene editor, gradient lamps are marked *gradient* under **Lights of this scene**, and
+**All colors on gradient lamps** switches it off for the scene (`gradient: false`): the lamps then get
+one color like any other lamp. Without Zigbee2MQTT (e.g. Hue Bridge) the lamps get one color as before.
+
 ## Optional lights
 
 Lights in `optional` take part **only if they are on** when the scene starts. A light that is off

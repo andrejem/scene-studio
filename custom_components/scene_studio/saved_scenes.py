@@ -31,6 +31,7 @@ SCENE_SETTING_KEYS = (
     "keep_groups",
     "optional",
     "light_brightness",
+    "gradient",
 )
 
 

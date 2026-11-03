@@ -144,6 +144,9 @@ const EN = {
     music_when_on: "Also when a light is already on",
     music_end_help: "When the music stops, the lights return to how they were before after 30 s, or turn off.",
     music_badge: "Music",
+    gradient_switch: "All colors on gradient lamps",
+    gradient_help: "Gradient lamps (e.g. Hue Signe, Play gradient) show all colors of the preset as a gradient. Off: one color like any other lamp.",
+    gradient_badge: "gradient",
 };
 
 type Key = keyof typeof EN;
@@ -292,6 +295,9 @@ const DE: {[K in Key]: string} = {
     music_when_on: "Auch wenn schon Licht an ist",
     music_end_help: "Endet die Musik, kehren die Lampen nach 30 s zum Zustand vorher zurück – oder gehen aus.",
     music_badge: "Musik",
+    gradient_switch: "Alle Farben auf Verlaufslampen",
+    gradient_help: "Verlaufslampen (z. B. Hue Signe, Play Gradient) zeigen alle Farben der Vorlage als Verlauf. Aus: eine Farbe wie jede andere Lampe.",
+    gradient_badge: "Verlauf",
 };
 
 export type Translate = (key: Key, vars?: {[name: string]: string | number}) => string;

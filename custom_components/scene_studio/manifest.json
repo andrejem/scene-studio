@@ -1,7 +1,7 @@
 {
     "domain": "scene_studio",
     "name": "Scene Studio",
-    "after_dependencies": ["http"],
+    "after_dependencies": ["http", "mqtt"],
     "categories": ["lighting"],
     "codeowners": [
         "@andrejem"
@@ -12,5 +12,5 @@
     "iot_class": "calculated",
     "issue_tracker": "https://github.com/andrejem/scene-studio/issues",
     "requirements": [],
-    "version": "3.2.0"
+    "version": "3.3.0"
 }

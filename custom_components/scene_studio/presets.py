@@ -1,4 +1,5 @@
-# Modified by andrejem (2026): optional brightness per light (light_brightness), runtime presets.
+# Modified by andrejem (2026): optional brightness per light (light_brightness), runtime presets,
+# gradient lamps get the preset colors as gradient (gradient.py).
 
 import voluptuous as vol
 import asyncio
@@ -7,6 +8,8 @@ from .file_utils import PRESET_DATA, RUNTIME_PRESETS
 from .color_management import *
 from .color_temperature import find_closest_ct_match
 from .util import light_brightness_for
+from .const import DOMAIN
+from .gradient import gradient_colors
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,6 +23,7 @@ async def apply_preset(
     smart_shuffle,
     brightness_override=None,
     light_brightness=None,
+    gradient=True,
 ):
     preset_data = RUNTIME_PRESETS.get(preset_id)
     for preset in [] if preset_data else PRESET_DATA.get("presets", []):
@@ -67,6 +71,14 @@ async def apply_preset(
         color_support = any(mode in supported_color_modes for mode in ["xy", "hs", "rgb", "rgbw"])
         temp_support = "color_temp" in supported_color_modes
         brightness_support = "brightness" in supported_color_modes
+
+        gradients = hass.data.get(DOMAIN, {}).get("gradient") if gradient else None
+        if color_support and gradients is not None and len(preset_colors) > 1 and gradients.is_gradient(entity_id):
+            # A gradient lamp shows all colors of the preset, starting with the one it would get
+            tasks.append(gradients.async_apply(
+                entity_id, gradient_colors(preset_colors, next_color), light_params["brightness"], transition,
+            ))
+            continue
 
         if color_support:
             light_params["xy_color"] = next_color
