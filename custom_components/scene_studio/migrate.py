@@ -58,8 +58,9 @@ async def async_import_status(hass: HomeAssistant, store) -> dict:
     scenes = await _old_scenes(hass)
     new = [s for s in scenes if store.get(s["id"]) is None]
     files = await hass.async_add_executor_job(_custom_files, _old_custom_dir(hass))
+    has_custom = await hass.async_add_executor_job(os.path.exists, os.path.join(CUSTOM_DIR, "presets.json"))
     return {
-        "available": bool(new) or bool(files) and not os.path.exists(os.path.join(CUSTOM_DIR, "presets.json")),
+        "available": bool(new) or bool(files) and not has_custom,
         "scenes": len(scenes),
         "new_scenes": len(new),
         "custom_files": len(files),

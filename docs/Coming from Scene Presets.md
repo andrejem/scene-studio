@@ -22,7 +22,7 @@ When Scene Studio finds data of Scene Presets, the panel shows **Scene Presets f
 Favorites, the chosen lights and the settings of the panel are taken over in each browser the first
 time Scene Studio is opened there.
 
-The same import is available as a service:
+The same import is available as a service (admins only, like the button in the panel):
 
 ```yaml
 action: scene_studio.import_scene_presets
