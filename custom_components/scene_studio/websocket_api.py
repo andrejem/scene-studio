@@ -11,6 +11,7 @@ from .optional_lights import split_optional
 from .util import ensure_list, filter_targets, resolve_targets
 from .migrate import async_import_status, async_import_scene_presets
 from .custom_presets import CustomPresetError, save_preset, delete_preset, set_override, reset_override
+from .file_utils import async_reload_preset_data
 
 LIGHT_COLOR = vol.Schema({vol.Required("x"): vol.Coerce(float), vol.Required("y"): vol.Coerce(float)})
 
@@ -110,6 +111,7 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
         except CustomPresetError as err:
             connection.send_error(msg["id"], "invalid_preset", str(err))
             return None, False
+        await async_reload_preset_data(hass)
         return result, True
 
     @websocket_api.websocket_command(

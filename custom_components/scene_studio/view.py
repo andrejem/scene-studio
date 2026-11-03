@@ -2,7 +2,8 @@
 # frontend URLs carry a hash of the file, so browsers load a new build without a version bump;
 # images of presets created in the panel are served by a view (available without a restart);
 # a picture shared by several presets (hidden presets) is registered once;
-# preset data and the user's own pictures need a login, pictures come with signed URLs (images.py)
+# preset data and the user's own pictures need a login, pictures come with signed URLs (images.py);
+# static paths and views are registered once per run, the panel with every setup of the entry (reload)
 import hashlib
 from .const import NAME, DOMAIN, PANEL_URL, ROOM_CARD_URL
 from .file_utils import VERSION, PRESET_DATA, BASE_PATH
@@ -52,6 +53,10 @@ class PrivatePresetImageView(HomeAssistantView):
             return web.Response(status=404)
         return web.FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
 
+# static paths and views cannot be removed from the running web server: registered once per run
+_HTTP_REGISTERED = f"{DOMAIN}_http_registered"
+
+
 def _file_hash(path):
     try:
         with open(path, "rb") as file:
@@ -65,6 +70,10 @@ async def async_setup_view(hass):
     card_path = hass.config.path(f'{BASE_PATH}/frontend/scene-studio-room-card.js')
     panel_hash = await hass.async_add_executor_job(_file_hash, panel_path)
     card_hash = await hass.async_add_executor_job(_file_hash, card_path)
+    if hass.data.get(_HTTP_REGISTERED):
+        _register_panel(hass, panel_hash)
+        return
+    hass.data[_HTTP_REGISTERED] = True
     static_paths = [
         StaticPathConfig(PANEL_URL, hass.config.path(f'{BASE_PATH}/frontend/scene_studio_panel.js'), True),
         StaticPathConfig(f'/assets/{DOMAIN}/iconset.js', hass.config.path(f'{BASE_PATH}/res/iconset.js'), True),
@@ -79,7 +88,10 @@ async def async_setup_view(hass):
     hass.http.register_view(PrivatePresetImageView)
     add_extra_js_url(hass, f"/assets/{DOMAIN}/iconset.js?{VERSION}")
     add_extra_js_url(hass, f"{ROOM_CARD_URL}?{card_hash}")
+    _register_panel(hass, panel_hash)
 
+
+def _register_panel(hass, panel_hash):
     async_register_built_in_panel(
         hass,
         component_name="custom",
@@ -97,7 +109,8 @@ async def async_setup_view(hass):
     )
 
 async def async_remove_view(hass):
-    async_remove_panel(hass, "scene-studio")
+    """Remove the panel (unload of the entry). Static paths and views stay until the restart."""
+    async_remove_panel(hass, "scene-studio", warn_if_unknown=False)
 
 async def get_preset_image_paths(hass):
     static_paths = []

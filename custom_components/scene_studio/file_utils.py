@@ -1,5 +1,6 @@
 # Modified by andrejem (2026): presets are built by load_preset_data(), so presets created in the
-# panel and replaced preset images (overrides) can be reloaded without a restart.
+# panel and replaced preset images (overrides) can be reloaded without a restart
+# (async_reload_preset_data reads the files in the executor).
 # Runtime presets for music scenes (RUNTIME_PRESETS).
 import json
 import os
@@ -8,9 +9,8 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
-MANIFEST = json.load(
-    open(os.path.join(BASE_PATH, 'manifest.json'))
-)
+with open(os.path.join(BASE_PATH, 'manifest.json'), encoding='utf-8') as _manifest:
+    MANIFEST = json.load(_manifest)
 VERSION = MANIFEST['version']
 
 
@@ -70,5 +70,12 @@ RUNTIME_PRESETS: dict[str, dict] = {}
 def reload_preset_data():
     """Reload in place: every module keeps its reference to PRESET_DATA."""
     data = load_preset_data()
+    PRESET_DATA.clear()
+    PRESET_DATA.update(data)
+
+
+async def async_reload_preset_data(hass):
+    """Read the files in the executor, swap the data on the event loop (no change from a thread)."""
+    data = await hass.async_add_executor_job(load_preset_data)
     PRESET_DATA.clear()
     PRESET_DATA.update(data)

@@ -13,7 +13,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
-from .file_utils import CUSTOM_DIR, reload_preset_data
+from .file_utils import CUSTOM_DIR, async_reload_preset_data
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ async def async_import_scene_presets(
     copied = await hass.async_add_executor_job(_copy_custom, _old_custom_dir(hass), CUSTOM_DIR, overwrite)
     result["custom_files"] = copied
     if copied:
-        await hass.async_add_executor_job(reload_preset_data)
+        await async_reload_preset_data(hass)
 
     scenes = await _old_scenes(hass)
     to_import = [s for s in scenes if overwrite or store.get(s["id"]) is None]

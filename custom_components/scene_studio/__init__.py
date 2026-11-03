@@ -7,6 +7,7 @@
 # Import from Scene Presets (import_scene_presets, admins only).
 # Music scenes: colors from the album cover of a media player (music_scenes.py).
 # Gradient lamps get all colors of the preset (gradient.py, option gradient).
+# The integration can be reloaded (the panel is removed on unload).
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
@@ -484,7 +485,11 @@ async def async_setup_entry(
 async def async_unload_entry(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> bool:
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unloaded:
+        # the panel is registered again by async_setup_entry (reload of the integration)
+        await async_remove_view(hass)
+    return unloaded
 
 async def async_remove_entry(
     hass: HomeAssistant, entry: ConfigEntry

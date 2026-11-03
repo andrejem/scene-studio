@@ -1,5 +1,6 @@
 # Added by andrejem (2026): presets created in the panel ("scene from photo") and replaced images or
-# colors of existing presets. Everything is stored in userdata/custom/presets.json, the same file that
+# colors of existing presets (blocking file access, called in the executor; the caller reloads the presets).
+# Everything is stored in userdata/custom/presets.json, the same file that
 # hand-written custom presets use: unknown keys and existing entries are kept as they are.
 
 import base64
@@ -12,7 +13,7 @@ import shutil
 import time
 import uuid
 
-from .file_utils import CUSTOM_DIR, PRESET_DATA, custom_presets_path, reload_preset_data
+from .file_utils import CUSTOM_DIR, PRESET_DATA, custom_presets_path
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -172,7 +173,6 @@ def save_preset(msg):
     if existing is None:
         data["presets"].append(preset)
     _write(data)
-    reload_preset_data()
     return preset
 
 
@@ -189,7 +189,6 @@ def delete_preset(preset_id, used_by):
         data["categories"] = [c for c in data["categories"] if c.get("id") != DEFAULT_CATEGORY_ID]
     _write(data)
     _remove_image(preset.get("img"))
-    reload_preset_data()
 
 
 def set_override(preset_id, image, lights):
@@ -209,7 +208,6 @@ def set_override(preset_id, image, lights):
         override["lights"] = _lights(lights)
     override["changed"] = int(time.time())
     _write(data)
-    reload_preset_data()
 
 
 def reset_override(preset_id):
@@ -221,4 +219,3 @@ def reset_override(preset_id):
         del data["overrides"]
     _write(data)
     _remove_image(override.get("img"))
-    reload_preset_data()

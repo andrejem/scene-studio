@@ -76,6 +76,11 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   pictures of the user only through `images.py`. Filesystem calls never on the event loop, use
   `hass.async_add_executor_job`. Commands and services that read or change other integrations or the
   user's files are for admins (`@websocket_api.require_admin`, `async_register_admin_service`).
+- The config entry must survive a reload: static paths and views are registered once per run
+  (`view.py`), the panel is removed in `async_unload_entry` and registered again on setup.
+- Shared data (`PRESET_DATA`) is changed only on the event loop; files are read in the executor
+  (`async_reload_preset_data`). Downloads have a size limit, certificate checks are skipped only for
+  Home Assistant's own internal URL.
 - A new or changed service, service field or config flow text goes into `services.yaml` **and**
   `translations/en.json` (name and description for every service and field).
   No curly braces in these texts: hassfest reads `{...}` as a placeholder and fails.
