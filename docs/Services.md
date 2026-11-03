@@ -130,3 +130,4 @@ data:
 | `scene_studio/resolve_targets` | Lights a scene with these targets controls |
 | `scene_studio/get_music_scenes` | Active music scenes with speaker, cover and current colors |
 | `scene_studio/save_custom_preset`, `delete_custom_preset`, `set_preset_image`, `reset_preset` | Presets from photos (admins; the preset is passed as `preset_id`) |
+| `scene_studio/import_status`, `scene_studio/import` | Import from Scene Presets (admins) |

@@ -1,5 +1,6 @@
 // Modified by andrejem (2026): presets can be reloaded after creating or changing one in the panel;
-// tabs "Scenes" / "Presets", running dynamic scenes on top, the scene editor and the import from Scene Presets
+// tabs "Scenes" / "Presets", running dynamic scenes on top, the scene editor and the import from Scene Presets;
+// preset data is loaded with the login of the user
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {PresetApplyPage} from "./pages/PresetApplyPage";
 import {ScenesPage} from "./pages/ScenesPage";
@@ -56,7 +57,7 @@ export const App : React.FunctionComponent<{
 
     const fetchData = React.useCallback(async () => {
         try {
-            const response = await fetch("/assets/scene_studio/scene_studio.json?t=" + Date.now());
+            const response = await hass.fetchWithAuth("/assets/scene_studio/scene_studio.json?t=" + Date.now());
             const data = await response.json();
 
             setCategories(data.categories);

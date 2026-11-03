@@ -186,6 +186,7 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
     websocket_api.async_register_command(_hass, ws_reset_preset)
 
     @websocket_api.websocket_command({vol.Required("type"): "scene_studio/import_status"})
+    @websocket_api.require_admin
     @websocket_api.async_response
     async def ws_import_status(hass, connection, msg) -> None:
         connection.send_result(msg["id"], await async_import_status(hass, saved_scene_store))

@@ -4,7 +4,7 @@
 # Optional exclude list, keep_groups and optional lights for apply_preset, start_dynamic_scene
 # and saved scenes. activate_saved_scene can apply a saved scene to other lights (targets).
 # Brightness per light (light_brightness), 0 % turns the light off when the scene starts.
-# Import from Scene Presets (import_scene_presets).
+# Import from Scene Presets (import_scene_presets, admins only).
 # Music scenes: colors from the album cover of a media player (music_scenes.py).
 # Gradient lamps get all colors of the preset (gradient.py, option gradient).
 
@@ -13,6 +13,7 @@ import homeassistant.helpers.config_validation as cv
 import logging
 from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.service import async_register_admin_service
 from .const import *
 
 from .dynamic_scenes import DynamicScene, DynamicSceneManager
@@ -445,7 +446,9 @@ async def async_setup(hass, config):
             overwrite=call.data["overwrite"],
         )
 
-    hass.services.async_register(
+    # changes entries of another integration: admins only
+    async_register_admin_service(
+        hass,
         DOMAIN,
         SERVICE_IMPORT_SCENE_PRESETS,
         import_scene_presets,
@@ -453,7 +456,7 @@ async def async_setup(hass, config):
             vol.Optional("take_over_entities", default=True): cv.boolean,
             vol.Optional("overwrite", default=False): cv.boolean,
         }),
-        supports_response=SupportsResponse.OPTIONAL
+        supports_response=SupportsResponse.OPTIONAL,
     )
 
 

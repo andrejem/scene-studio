@@ -32,6 +32,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start)
   - `color_management.py`, `color_temperature.py` - color selection and CT fallback
   - `view.py`, `websocket_api.py` - panel registration, static assets, websocket commands
+  - `images.py` - preset pictures: built-in ones are public static files, the user's own pictures
+    (uploads, hand-written custom presets) need a login and are linked with signed URLs (panel data,
+    `entity_picture` of the scene entities, renewed every 12 hours)
     (`id` is the message id of the websocket protocol, use `preset_id`).
     Panel and room card URLs carry a hash of the file (`?<hash>`); the hash is computed when
     Home Assistant starts, so a new build needs a restart to reach the browsers.
@@ -69,6 +72,10 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   card. New options are optional and default to the current behavior; a deliberate break is noted
   in the release notes.
 - New service parameters are optional and keep the current behavior by default.
+- Security (from the HACS review): no view with `requires_auth = False` that returns user data;
+  pictures of the user only through `images.py`. Filesystem calls never on the event loop, use
+  `hass.async_add_executor_job`. Commands and services that read or change other integrations or the
+  user's files are for admins (`@websocket_api.require_admin`, `async_register_admin_service`).
 - A new or changed service, service field or config flow text goes into `services.yaml` **and**
   `translations/en.json` (name and description for every service and field).
   No curly braces in these texts: hassfest reads `{...}` as a placeholder and fails.

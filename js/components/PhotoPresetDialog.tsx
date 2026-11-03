@@ -1,10 +1,12 @@
 // Added by andrejem (2026): "scene from photo" - create presets from a photo, edit and delete own
-// presets, replace the image or the colors of built-in presets (the original can be restored)
+// presets, replace the image or the colors of built-in presets (the original can be restored);
+// pictures of own presets are shown through their signed URL
 
 import React, {useEffect, useRef, useState} from "react";
 import HaDialog from "./hass/building_blocks/HaDialog";
 import {Category, Preset} from "../types";
 import {Translate} from "../i18n";
+import {presetImage} from "../tunables";
 import {extractPalette, hexToRgb, RGB, rgbToHex, rgbToXy, xyToRgb} from "../palette";
 
 const BUTTON: React.CSSProperties = {
@@ -215,7 +217,7 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
         run(() => hass.callWS({type: "scene_studio/reset_preset", preset_id: preset.id}));
     };
 
-    const imageSrc = image ?? (preset?.img ? "/assets/scene_studio/" + preset.img : null);
+    const imageSrc = image ?? presetImage(preset) ?? null;
     const canSave = !busy && colors.length > 0 && (isBuiltin
         ? (!!image || colorsChanged)
         : (!!name.trim() && (!!image || !!preset) && (categoryId !== NEW_CATEGORY || !!newCategory.trim())));

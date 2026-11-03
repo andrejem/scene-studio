@@ -246,6 +246,10 @@ export function targetSummary(hass: any, targets: HaTargetSelectorValue | undefi
     return parts.join(", ");
 }
 
+// pictures of the user's own presets come with a signed URL, built-in pictures are static files
 export const presetImage = (preset: any): string | undefined => {
-    return preset?.img ? "/assets/scene_studio/" + preset.img : undefined;
+    if (!preset?.img) {
+        return undefined;
+    }
+    return preset.img_url ?? "/assets/scene_studio/" + preset.img;
 };

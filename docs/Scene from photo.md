@@ -48,6 +48,12 @@ Everything lives in `custom_components/scene_studio/userdata/custom/` (kept by H
 - `assets/user/` - the photos (unique file names, removed again when a preset is deleted or its
   photo replaced).
 
+Your photos stay private: they are only served to logged-in users of Home Assistant
+(`/api/scene_studio/image/...`). The panel and the scene entities get signed links to them that are
+valid for a limited time and renewed automatically, the same way Home Assistant shows camera pictures.
+The pictures of [hand-written custom presets](Custom%20Presets.md) are treated the same way; only the
+pictures of the built-in presets are public files.
+
 ## Websocket commands (admin only)
 
 | Command | Fields |
