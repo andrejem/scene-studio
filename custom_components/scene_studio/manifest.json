@@ -1,7 +1,7 @@
 {
     "domain": "scene_studio",
     "name": "Scene Studio",
-    "after_dependencies": ["http"],
+    "after_dependencies": ["http", "mqtt"],
     "categories": ["lighting"],
     "codeowners": [
         "@andrejem"
