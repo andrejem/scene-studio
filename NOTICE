@@ -13,6 +13,7 @@ Changes compared to Scene Presets (2026, Michael Andrejews):
 - Per-light timing for dynamic scenes
 - Presets from photos and replaced pictures of built-in presets
 - Room card for dashboards
+- Gradient lamps in Zigbee2MQTT show all colors of a preset as gradient
 - Music scenes: colors from the album cover of a speaker, starting by themselves when music starts,
   return to the state before when the music stops (preset "Music" with its own drawing)
 - Redesigned panel (scenes by room, presets tab), English and German texts

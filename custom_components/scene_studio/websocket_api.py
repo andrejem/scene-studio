@@ -1,7 +1,7 @@
 # Modified by andrejem (2026): added scene_studio/get_saved_scenes and
 # scene_studio/resolve_targets (lights of a scene, for brightness per light) commands,
 # commands for presets created in the panel and replaced preset images (admin only),
-# import from Scene Presets, active music scenes (get_music_scenes)
+# import from Scene Presets, active music scenes (get_music_scenes), gradient lamps in resolve_targets
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -80,6 +80,7 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             msg.get("keep_groups"),
         )
         base, _on, optional_ids = split_optional(hass, lights, msg.get("optional"), msg.get("keep_groups"))
+        gradients = hass.data.get("scene_studio", {}).get("gradient")
         result = []
         for entity_id in base + optional_ids:
             state = hass.states.get(entity_id)
@@ -87,6 +88,7 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
                 "entity_id": entity_id,
                 "name": state.name if state else entity_id,
                 "optional": entity_id in optional_ids,
+                "gradient": bool(gradients and gradients.is_gradient(entity_id)),
             })
         result.sort(key=lambda light: light["name"].lower())
         connection.send_result(msg["id"], {"lights": result})

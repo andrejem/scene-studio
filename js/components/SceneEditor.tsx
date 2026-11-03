@@ -3,6 +3,7 @@
 // Replaces the former "last action" dialog: the scene entity id is shown for automations.
 // Music scenes (3.2): with the preset "Music" the colors come from the album cover of a speaker,
 // the editor then shows the speaker and when the scene starts by itself.
+// Gradient lamps (3.3): switch "all colors on gradient lamps", shown when the scene has such a lamp.
 
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import HaIcon from "./hass/building_blocks/HaIcon";
@@ -27,10 +28,11 @@ export type SceneDraft = {
     keepGroups: Array<string>,
     optional: Array<string>,
     lightBrightness: {[entityId: string]: number},
-    music?: MusicSettings
+    music?: MusicSettings,
+    gradient?: boolean
 };
 
-type SceneLight = {entity_id: string, name: string, optional: boolean};
+type SceneLight = {entity_id: string, name: string, optional: boolean, gradient?: boolean};
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -57,6 +59,7 @@ export const SceneEditor: React.FunctionComponent<{
     const [optional, setOptional] = useState<Array<string>>([]);
     const [lightBrightness, setLightBrightness] = useState<{[entityId: string]: number}>({});
     const [music, setMusic] = useState<MusicSettings>({media_player: "", auto_start: "never", when_on: false});
+    const [gradient, setGradient] = useState(true);
     const [sceneLights, setSceneLights] = useState<Array<SceneLight>>([]);
     const [moreOpen, setMoreOpen] = useState(false);
     const [showLeftOut, setShowLeftOut] = useState(false);
@@ -84,6 +87,7 @@ export const SceneEditor: React.FunctionComponent<{
         setOptional(draft.optional);
         setLightBrightness(draft.lightBrightness);
         setMusic({media_player: "", auto_start: "never", when_on: false, ...(draft.music ?? {})});
+        setGradient(draft.gradient !== false);
         setMoreOpen(false);
         setShowLeftOut(false);
         setPicker(!draft.presetId);
@@ -214,6 +218,9 @@ export const SceneEditor: React.FunctionComponent<{
         });
         if (Object.keys(perLight).length > 0) {
             payload.light_brightness = perLight;
+        }
+        if (!gradient) {
+            payload.gradient = false;
         }
         return {service, payload};
     };
@@ -501,6 +508,13 @@ export const SceneEditor: React.FunctionComponent<{
                                         <span className={"sp-secondary sp-small"}>{t("n_lights", {n: sceneLights.length})}</span>
                                     </div>
                                     <div className={"sp-secondary sp-small"}>{t("lights_help")}</div>
+                                    {
+                                        sceneLights.some(l => l.gradient) &&
+                                        <>
+                                            <SwitchRow label={t("gradient_switch")} value={gradient} onChange={setGradient} className={"scene-gradient"}/>
+                                            <div className={"sp-secondary sp-small"}>{t("gradient_help")}</div>
+                                        </>
+                                    }
                                     <div className={"sp-list"}>
                                         {sceneLights.map(light => {
                                             const value = lightBrightness[light.entity_id];
@@ -512,6 +526,7 @@ export const SceneEditor: React.FunctionComponent<{
                                                         <span className={"sp-grow"}>
                                                             {light.name}
                                                             {isGroup && <span className={"sp-secondary sp-small"}> · {t("as_one_light")}</span>}
+                                                            {light.gradient && gradient && <span className={"sp-secondary sp-small"}> · {t("gradient_badge")}</span>}
                                                         </span>
                                                         <span className={"sp-num small"}>
                                                             <input
@@ -654,6 +669,7 @@ export function draftFromScene(scene: SavedScene, tun: Tunables, areaId: string 
         keepGroups: scene.keep_groups ?? [],
         optional: scene.optional ?? [],
         lightBrightness: scene.light_brightness ?? {},
-        music: scene.music
+        music: scene.music,
+        gradient: scene.gradient
     };
 }

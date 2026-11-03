@@ -6,6 +6,7 @@
 # Brightness per light (light_brightness), 0 % turns the light off when the scene starts.
 # Import from Scene Presets (import_scene_presets).
 # Music scenes: colors from the album cover of a media player (music_scenes.py).
+# Gradient lamps get all colors of the preset (gradient.py, option gradient).
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
@@ -24,6 +25,7 @@ from .optional_lights import OptionalLights, split_optional
 from .migrate import async_import_scene_presets
 from .music_scenes import MusicScenes, AUTO_START_OPTIONS, AUTO_START_NEVER, runtime_preset_id, is_music_scene
 from .file_utils import RUNTIME_PRESETS
+from .gradient import GradientLights
 
 PLATFORMS = ["scene"]
 
@@ -43,6 +45,7 @@ APPLY_PRESET_SCHEMA = vol.Schema({
     vol.Optional(ATTR_KEEP_GROUPS): cv.entity_ids,
     vol.Optional(ATTR_OPTIONAL): cv.entity_ids,
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
+    vol.Optional(ATTR_GRADIENT): cv.boolean,
 })
 
 START_DYNAMIC_SCENE_SCHEMA = vol.Schema({
@@ -59,6 +62,7 @@ START_DYNAMIC_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_KEEP_GROUPS): cv.entity_ids,
     vol.Optional(ATTR_OPTIONAL): cv.entity_ids,
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
+    vol.Optional(ATTR_GRADIENT): cv.boolean,
 })
 
 
@@ -98,6 +102,7 @@ SAVE_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_KEEP_GROUPS): cv.entity_ids,
     vol.Optional(ATTR_OPTIONAL): cv.entity_ids,
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
+    vol.Optional(ATTR_GRADIENT): cv.boolean,
     vol.Optional("music"): MUSIC_SCHEMA,
 })
 
@@ -149,6 +154,7 @@ async def async_setup(hass, config):
     hass.data[DOMAIN]["optional_lights"] = optional_lights
     music_scenes = MusicScenes(hass, saved_scene_store, dynamic_scene_manager)
     hass.data[DOMAIN]["music_scenes"] = music_scenes
+    hass.data[DOMAIN]["gradient"] = GradientLights(hass)
 
     async def apply_preset_service(call):
         preset_id = call.data.get(ATTR_SCENE_PRESET_ID)
@@ -196,6 +202,7 @@ async def async_setup(hass, config):
             smart_shuffle,
             brightness_override,
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
+            gradient=call.data.get(ATTR_GRADIENT, True),
         )
         optional_lights.register(
             optional_ids, light_entity_ids, preset_id, brightness_override,
@@ -250,6 +257,7 @@ async def async_setup(hass, config):
             "transition": transition,
             "shuffle": shuffle,
             ATTR_LIGHT_BRIGHTNESS: call.data.get(ATTR_LIGHT_BRIGHTNESS),
+            ATTR_GRADIENT: call.data.get(ATTR_GRADIENT, True),
         }
 
         range_attrs = (ATTR_INTERVAL_MIN, ATTR_INTERVAL_MAX, ATTR_TRANSITION_MIN, ATTR_TRANSITION_MAX)
@@ -459,6 +467,12 @@ async def async_setup_entry(
     await async_setup_view(hass)
 
     async_setup_websocket_api(hass, dynamic_scene_manager, hass.data[DOMAIN]["saved_scenes"])
+
+    gradients = hass.data[DOMAIN].get("gradient")
+    if gradients is not None:
+        # Finds gradient lamps once MQTT is up; scenes work without it
+        entry.async_create_background_task(hass, gradients.async_start(), "scene_studio_gradient_lights")
+        entry.async_on_unload(gradients.async_stop)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

@@ -530,6 +530,7 @@ class MusicScenes:
                 self.hass, preset_id, on, COVER_TRANSITION if new_cover else TRACK_TRANSITION, True, True,
                 scene.get("brightness"),
                 light_brightness={k: v for k, v in (settings or {}).items() if v > 0} or None,
+                gradient=scene.get("gradient", True),
             )
         finally:
             _INTERNAL.reset(token)

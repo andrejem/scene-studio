@@ -20,6 +20,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   - `migrate.py` - import from Scene Presets (saved scenes, own presets, scene entities)
   - `scene.py` - scene platform, one entity per saved scene
   - `optional_lights.py` - optional lights that join an active scene when turned on
+  - `gradient.py` - gradient lamps (Hue Signe, Play gradient … in Zigbee2MQTT): found via
+    `+/bridge/devices`, mapped to light entities by the IEEE address in the device identifiers;
+    `apply_preset` sends them all preset colors as `gradient` over MQTT (option `gradient`, default true)
   - `music_scenes.py` - music scenes: saved scenes with the preset Music (`MUSIC_PRESET_ID`) take the
     colors of the album cover of a speaker. Colors live in `RUNTIME_PRESETS` (`file_utils.py`,
     `music_<scene id>`), which `apply_preset` checks first. Sessions per scene: snapshot of the lights,

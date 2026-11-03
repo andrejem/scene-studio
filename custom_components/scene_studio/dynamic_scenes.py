@@ -1,7 +1,7 @@
 # Modified by andrejem (2026): added optional per-light timing with randomized
 # interval and transition ranges. Without those ranges the behavior is unchanged.
 # add_light()/remove_light() let single lights join or leave a running scene.
-# Optional brightness per light (light_brightness).
+# Optional brightness per light (light_brightness), gradient lamps (gradient).
 
 import uuid
 import asyncio
@@ -85,6 +85,7 @@ class DynamicScene:
                 smart_shuffle,
                 self.parameters.get(ATTR_BRIGHTNESS, None),
                 light_brightness=self.parameters.get(ATTR_LIGHT_BRIGHTNESS),
+                gradient=self.parameters.get(ATTR_GRADIENT, True),
             )
             run_count += 1
 
@@ -103,6 +104,7 @@ class DynamicScene:
             False,
             self.parameters.get(ATTR_BRIGHTNESS, None),
                 light_brightness=self.parameters.get(ATTR_LIGHT_BRIGHTNESS),
+                gradient=self.parameters.get(ATTR_GRADIENT, True),
         )
 
         # Afterwards, every light runs on its own schedule
@@ -148,6 +150,7 @@ class DynamicScene:
                 True,
                 self.parameters.get(ATTR_BRIGHTNESS, None),
                 light_brightness=self.parameters.get(ATTR_LIGHT_BRIGHTNESS),
+                gradient=self.parameters.get(ATTR_GRADIENT, True),
             )
 
     def _start_light_loop(self, entity_id):

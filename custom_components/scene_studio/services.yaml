@@ -76,6 +76,11 @@ apply_preset:
       example: '{"light.living_room_strip": 20}'
       selector:
         object:
+    gradient:
+      name: "Gradient lamps"
+      description: "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
+      selector:
+        boolean:
 
 get_dynamic_scenes:
   name: "Get dynamic scenes"
@@ -191,6 +196,11 @@ start_dynamic_scene:
       example: '{"light.living_room_strip": 20}'
       selector:
         object:
+    gradient:
+      name: "Gradient lamps"
+      description: "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
+      selector:
+        boolean:
 
 stop_dynamic_scene:
   name: "Stop dynamic scene"
@@ -343,6 +353,11 @@ save_scene:
       example: '{"light.living_room_strip": 20}'
       selector:
         object:
+    gradient:
+      name: "Gradient lamps"
+      description: "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
+      selector:
+        boolean:
     music:
       name: "Music scene"
       description: "Optional. Makes this a music scene: the colors come from the album cover of the media player, the preset is used until a cover is known. auto_start: never (only when selected), follow (when music starts while a music scene is active in another room) or always. By default it starts by itself only if no light of the scene is on; when_on: true starts it anyway."

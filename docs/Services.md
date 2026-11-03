@@ -28,6 +28,7 @@ Applies a preset once.
 | `keep_groups` | | Light groups controlled as one light |
 | `optional` | | Lights that take part only if they are on |
 | `light_brightness` | | Brightness in percent per light, e.g. `{light.strip: 20}`; 0 = off at the start |
+| `gradient` | | Default `true`: gradient lamps in Zigbee2MQTT show all colors of the preset ([details](Lights%20of%20a%20scene.md#gradient-lamps)); `false` = one color |
 
 ### `start_dynamic_scene`
 
@@ -40,7 +41,7 @@ Starts a loop that applies the preset with smart shuffled colors again and again
 | `transition` | | Transition of a color change in seconds |
 | `interval_min`, `interval_max` | | Per-light timing: every light waits a random time in this range ([details](Per-light%20timing.md)) |
 | `transition_min`, `transition_max` | | Per-light timing: random transition in this range |
-| `exclude`, `keep_groups`, `optional`, `light_brightness` | | as for `apply_preset` |
+| `exclude`, `keep_groups`, `optional`, `light_brightness`, `gradient` | | as for `apply_preset` |
 
 ### `stop_dynamic_scene`, `stop_dynamic_scenes_for_targets`, `stop_all_dynamic_scenes`
 

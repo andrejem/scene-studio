@@ -76,6 +76,7 @@ The editor works on its own copy of the scene; the *Presets* tab is not changed 
 | **Apply to** | The lights of the scene |
 | **Once / Dynamic**, **Brightness**, **More options** | As in the presets tab |
 | **Lights of this scene** | Brightness per light, *Only if on*, *Leave out*, groups as one light – see [Lights of a scene](Lights%20of%20a%20scene.md) |
+| **All colors on gradient lamps** | Only when the scene has a gradient lamp: off = one color on these lamps too ([gradient lamps](Lights%20of%20a%20scene.md#gradient-lamps)) |
 | **Use in automations** | Entity ID of the scene with a **Copy** button |
 
 - **Try** applies the scene to the lights without saving.
