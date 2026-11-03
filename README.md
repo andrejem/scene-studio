@@ -7,6 +7,18 @@ Pick one of 120+ color presets or make your own from a photo, save scenes for yo
 colors drift slowly as dynamic scenes, let the lights follow the album cover of your music and put
 each room on your dashboard with the room card.
 
+<p align="center">
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=andrejem&repository=scene-studio&category=integration"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open Scene Studio in HACS."></a>
+  <a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=scene_studio"><img src="https://my.home-assistant.io/badges/config_flow_start.svg" alt="Open your Home Assistant instance and start setting up Scene Studio."></a>
+</p>
+
+<p align="center">
+  <a href="https://hacs.xyz/"><img src="https://img.shields.io/badge/HACS-Default-41BDF5.svg" alt="HACS Default"></a>
+  <a href="https://github.com/andrejem/scene-studio/releases"><img src="https://img.shields.io/github/v/release/andrejem/scene-studio?label=release" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/Home%20Assistant-2026.7%2B-41BDF5.svg" alt="Home Assistant 2026.7+">
+  <a href="https://github.com/andrejem/scene-studio/blob/main/LICENSE"><img src="https://img.shields.io/github/license/andrejem/scene-studio" alt="License"></a>
+</p>
+
 <table>
   <tr>
     <td width="33%"><img src="https://raw.githubusercontent.com/andrejem/scene-studio/main/img/panel-scenes.png" alt="Scenes by room"></td>
@@ -38,11 +50,20 @@ each room on your dashboard with the room card.
 
 ### HACS
 
-1. In HACS, open the menu (⋮) → **Custom repositories**, add `https://github.com/andrejem/scene-studio`
-   with type **Integration**.
-2. Search for **Scene Studio** in HACS and download it.
-3. Restart Home Assistant.
-4. **Settings → Devices & services → Add integration → Scene Studio**.
+Scene Studio is part of the HACS default repositories.
+
+1. Search for **Scene Studio** in HACS and download it, or use this button:
+
+   [![Open your Home Assistant instance and open Scene Studio in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=andrejem&repository=scene-studio&category=integration)
+
+2. Restart Home Assistant.
+3. **Settings → Devices & services → Add integration → Scene Studio**, or use this button:
+
+   [![Open your Home Assistant instance and start setting up Scene Studio.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=scene_studio)
+
+If Scene Studio does not show up in the search (older HACS data), add it as a custom repository:
+HACS menu (⋮) → **Custom repositories** → `https://github.com/andrejem/scene-studio`, type
+**Integration**.
 
 ### Manual
 
