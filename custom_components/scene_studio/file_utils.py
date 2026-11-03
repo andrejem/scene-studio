@@ -1,6 +1,8 @@
 # Modified by andrejem (2026): presets are built by load_preset_data(), so presets created in the
-# panel and replaced preset images (overrides) can be reloaded without a restart.
-# Runtime presets for music scenes (RUNTIME_PRESETS).
+# panel and replaced preset images (overrides) can be reloaded without a restart
+# (async_reload_preset_data reads the files in the executor).
+# Runtime presets for music scenes (RUNTIME_PRESETS). No file access at import: the presets are loaded
+# and the userdata folder is created when the config entry is set up.
 import json
 import os
 import logging
@@ -8,15 +10,6 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
-MANIFEST = json.load(
-    open(os.path.join(BASE_PATH, 'manifest.json'))
-)
-VERSION = MANIFEST['version']
-
-
-
-os.makedirs(os.path.join(BASE_PATH, 'userdata/custom/assets'), exist_ok=True)
-
 CUSTOM_DIR = os.path.join(BASE_PATH, 'userdata/custom')
 custom_presets_path = os.path.join(CUSTOM_DIR, 'presets.json')
 
@@ -60,7 +53,8 @@ def load_preset_data():
     return data
 
 
-PRESET_DATA = load_preset_data()
+# filled by async_reload_preset_data() when the config entry is set up, changed in place afterwards
+PRESET_DATA: dict = {"categories": [], "presets": []}
 
 # Added by andrejem (2026): presets that only exist at runtime (colors of a music scene's cover).
 # Not shown in the panel, looked up by apply_preset before the regular presets.
@@ -70,5 +64,19 @@ RUNTIME_PRESETS: dict[str, dict] = {}
 def reload_preset_data():
     """Reload in place: every module keeps its reference to PRESET_DATA."""
     data = load_preset_data()
+    PRESET_DATA.clear()
+    PRESET_DATA.update(data)
+
+
+async def async_ensure_directories(hass):
+    """Folder for the user's own presets and pictures (kept by HACS updates)."""
+    await hass.async_add_executor_job(
+        lambda: os.makedirs(os.path.join(CUSTOM_DIR, 'assets'), exist_ok=True)
+    )
+
+
+async def async_reload_preset_data(hass):
+    """Read the files in the executor, swap the data on the event loop (no change from a thread)."""
+    data = await hass.async_add_executor_job(load_preset_data)
     PRESET_DATA.clear()
     PRESET_DATA.update(data)

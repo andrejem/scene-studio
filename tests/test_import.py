@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import entity_registry as er
 
-from .test_custom_presets import setup, userdata, ws  # noqa: F401  (fixture and helpers)
+from .test_custom_presets import setup, userdata, ws, runtime  # noqa: F401  (fixture and helpers)
 
 PRESET = "e71b2ef3-1b15-4c4b-b036-4b3d6efe58f8"
 OLD_SCENES = [
@@ -88,7 +88,7 @@ async def test_import_takes_over_entities(hass: HomeAssistant, hass_ws_client, m
     assert hass.config_entries.async_get_entry(old_entry.entry_id).disabled_by is not None
 
     # scenes keep their IDs and settings
-    store = hass.data["scene_studio"]["saved_scenes"]
+    store = runtime(hass).saved_scenes
     assert store.get("aaa")["light_brightness"] == {"light.strip": 20}
     assert store.get("bbb")["interval_min"] == 20
     assert hass.states.get("scene.living_room_relax").attributes["saved_scene_id"] == "aaa"

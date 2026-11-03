@@ -10,6 +10,7 @@ from .color_temperature import find_closest_ct_match
 from .util import light_brightness_for
 from .const import DOMAIN
 from .gradient import gradient_colors
+from .data import find_data
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,7 +73,8 @@ async def apply_preset(
         temp_support = "color_temp" in supported_color_modes
         brightness_support = "brightness" in supported_color_modes
 
-        gradients = hass.data.get(DOMAIN, {}).get("gradient") if gradient else None
+        runtime = find_data(hass) if gradient else None
+        gradients = runtime.gradient if runtime is not None else None
         if color_support and gradients is not None and len(preset_colors) > 1 and gradients.is_gradient(entity_id):
             # A gradient lamp shows all colors of the preset, starting with the one it would get
             tasks.append(gradients.async_apply(

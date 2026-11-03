@@ -10,7 +10,7 @@ from pytest_homeassistant_custom_component.common import async_fire_time_changed
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .test_custom_presets import setup, userdata  # noqa: F401  (fixture and helpers)
+from .test_custom_presets import setup, userdata, runtime  # noqa: F401  (fixture and helpers)
 
 PRESET = "e71b2ef3-1b15-4c4b-b036-4b3d6efe58f8"
 MUSIC = "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42"
@@ -105,7 +105,7 @@ def key(album, entity_id=PLAYER):
 
 
 def music(hass):
-    return hass.data["scene_studio"]["music_scenes"]
+    return runtime(hass).music_scenes
 
 
 def on(hass, entity_id):

@@ -2,6 +2,7 @@
 # the album cover of a speaker (the one in the scene's room unless chosen). Selecting the scene
 # activates it - until a cover is known nothing changes. It can also start by itself when music
 # starts. When the music stops (or moves on to another room), the lights return to their state before.
+# Covers are downloaded with a size limit; certificates are only skipped for Home Assistant itself.
 
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event
-from homeassistant.helpers.network import NoURLAvailableError, get_url
+from homeassistant.helpers.network import get_url
 from homeassistant.util import color as color_util
 
 from .const import (
@@ -55,6 +56,7 @@ MIN_CHANGE_INTERVAL = 5  # seconds: skipping through tracks does not make the li
 COVER_TRANSITION = 3
 TRACK_TRANSITION = 2  # new track, same cover: the colors move to other lamps
 RESTORE_TRANSITION = 2
+MAX_COVER_BYTES = 10 * 1024 * 1024  # album covers are a few hundred kB
 MAX_COLORS = 5
 
 # Set while the music scene manager calls services itself, so it does not end its own session
@@ -457,16 +459,28 @@ class MusicScenes:
         album = self._album_key(state)
         try:
             if picture.startswith("http"):
+                # a cover on the internet: certificates are checked
                 url = picture
+                session = async_get_clientsession(self.hass)
             else:
+                # Home Assistant's own media player proxy, reached on the internal URL, which
+                # often has a self-signed certificate
                 url = get_url(self.hass, prefer_external=False, allow_ip=True) + picture
-            session = async_get_clientsession(self.hass, verify_ssl=False)
+                session = async_get_clientsession(self.hass, verify_ssl=False)
             async with asyncio.timeout(10):
                 response = await session.get(url)
                 response.raise_for_status()
-                data = await response.read()
+                if int(response.headers.get("Content-Length") or 0) > MAX_COVER_BYTES:
+                    raise ValueError("cover too large")
+                chunks, size = [], 0
+                async for chunk in response.content.iter_chunked(65536):
+                    size += len(chunk)
+                    if size > MAX_COVER_BYTES:
+                        raise ValueError("cover too large")
+                    chunks.append(chunk)
+                data = b"".join(chunks)
             colors = await self.hass.async_add_executor_job(extract_cover_colors, data)
-        except (asyncio.TimeoutError, NoURLAvailableError, Exception) as err:  # noqa: BLE001
+        except Exception as err:  # noqa: BLE001 - no cover colors, the preset stays
             _LOGGER.warning("Cover of %s could not be read: %s", state.entity_id, err)
             return None
         if colors:

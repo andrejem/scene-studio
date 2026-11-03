@@ -124,3 +124,21 @@ async def test_import_is_for_admins(hass: HomeAssistant, hass_ws_client, hass_re
 
     admin = await hass_ws_client(hass)
     assert (await ws(admin, {"type": "scene_studio/import_status"}))["success"]
+
+
+async def test_reload(hass: HomeAssistant, monkeypatch, userdata):
+    """The entry can be reloaded: everything is set up again, services keep working."""
+    from custom_components.scene_studio.data import find_data
+
+    await setup(hass, monkeypatch)
+    entry = hass.config_entries.async_entries("scene_studio")[0]
+    first = find_data(hass)
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert find_data(hass) is not None and find_data(hass) is not first
+    response = await hass.services.async_call("scene_studio", "get_dynamic_scenes", {}, blocking=True,
+                                              return_response=True)
+    assert response is not None
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert find_data(hass) is None
