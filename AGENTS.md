@@ -32,6 +32,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start)
   - `color_management.py`, `color_temperature.py` - color selection and CT fallback
   - `view.py`, `websocket_api.py` - panel registration, static assets, websocket commands
+  - `data.py` - runtime data of the config entry (`entry.runtime_data`): saved scenes, dynamic
+    scenes, optional lights, music scenes, gradient lamps. Created in `async_setup_entry`, stopped on
+    unload. Services are registered in `async_setup` and get the data with `get_data(hass)`
   - `images.py` - preset pictures: built-in ones are public static files, the user's own pictures
     (uploads, hand-written custom presets) need a login and are linked with signed URLs (panel data,
     `entity_picture` of the scene entities, renewed every 12 hours)
@@ -76,6 +79,8 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   pictures of the user only through `images.py`. Filesystem calls never on the event loop, use
   `hass.async_add_executor_job`. Commands and services that read or change other integrations or the
   user's files are for admins (`@websocket_api.require_admin`, `async_register_admin_service`).
+- No file access at import time and no state in `hass.data[DOMAIN]` or module globals for things
+  that run: they belong to `entry.runtime_data`. `PRESET_DATA` is loaded in `async_setup_entry`.
 - The config entry must survive a reload: static paths and views are registered once per run
   (`view.py`), the panel is removed in `async_unload_entry` and registered again on setup.
 - Shared data (`PRESET_DATA`) is changed only on the event loop; files are read in the executor

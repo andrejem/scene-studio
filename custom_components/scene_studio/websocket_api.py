@@ -12,6 +12,7 @@ from .util import ensure_list, filter_targets, resolve_targets
 from .migrate import async_import_status, async_import_scene_presets
 from .custom_presets import CustomPresetError, save_preset, delete_preset, set_override, reset_override
 from .file_utils import async_reload_preset_data
+from .data import find_data
 
 LIGHT_COLOR = vol.Schema({vol.Required("x"): vol.Coerce(float), vol.Required("y"): vol.Coerce(float)})
 
@@ -46,7 +47,8 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
     @websocket_api.callback
     def ws_get_music_scenes(hass, connection, msg) -> None:
         """Active music scenes with their media player, album and current colors."""
-        music = hass.data.get("scene_studio", {}).get("music_scenes")
+        data = find_data(hass)
+        music = data.music_scenes if data is not None else None
         connection.send_result(msg["id"], {"active": music.get_state() if music else {}})
 
     websocket_api.async_register_command(_hass, ws_get_music_scenes)
@@ -81,7 +83,8 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             msg.get("keep_groups"),
         )
         base, _on, optional_ids = split_optional(hass, lights, msg.get("optional"), msg.get("keep_groups"))
-        gradients = hass.data.get("scene_studio", {}).get("gradient")
+        data = find_data(hass)
+        gradients = data.gradient if data is not None else None
         result = []
         for entity_id in base + optional_ids:
             state = hass.states.get(entity_id)

@@ -51,6 +51,14 @@ class OptionalLights:
         self._registrations: dict[str, dict] = {}
         self._unsub = None
 
+    @callback
+    def async_shutdown(self):
+        """Stop listening (unload of the config entry)."""
+        self._registrations.clear()
+        if self._unsub is not None:
+            self._unsub()
+            self._unsub = None
+
     def forget_overlapping(self, light_entity_ids, optional_ids):
         """A new scene on the lights of a registration replaces it.
 

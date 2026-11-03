@@ -6,7 +6,8 @@
 # static paths and views are registered once per run, the panel with every setup of the entry (reload)
 import hashlib
 from .const import NAME, DOMAIN, PANEL_URL, ROOM_CARD_URL
-from .file_utils import VERSION, PRESET_DATA, BASE_PATH
+from .file_utils import PRESET_DATA, BASE_PATH
+from homeassistant.loader import async_get_integration
 from aiohttp import web
 from homeassistant.components.http import KEY_HASS, HomeAssistantView, StaticPathConfig
 from .images import PRIVATE_IMAGE_URL, image_url, is_known_private_image, is_private, private_image_path
@@ -62,16 +63,17 @@ def _file_hash(path):
         with open(path, "rb") as file:
             return hashlib.sha1(file.read()).hexdigest()[:10]
     except OSError:
-        return VERSION
+        return None
 
 
 async def async_setup_view(hass):
     panel_path = hass.config.path(f'{BASE_PATH}/frontend/scene_studio_panel.js')
     card_path = hass.config.path(f'{BASE_PATH}/frontend/scene-studio-room-card.js')
-    panel_hash = await hass.async_add_executor_job(_file_hash, panel_path)
-    card_hash = await hass.async_add_executor_job(_file_hash, card_path)
+    version = str((await async_get_integration(hass, DOMAIN)).version)
+    panel_hash = await hass.async_add_executor_job(_file_hash, panel_path) or version
+    card_hash = await hass.async_add_executor_job(_file_hash, card_path) or version
     if hass.data.get(_HTTP_REGISTERED):
-        _register_panel(hass, panel_hash)
+        _register_panel(hass, panel_hash, version)
         return
     hass.data[_HTTP_REGISTERED] = True
     static_paths = [
@@ -86,12 +88,12 @@ async def async_setup_view(hass):
 
     hass.http.register_view(ScenePresetDataView)
     hass.http.register_view(PrivatePresetImageView)
-    add_extra_js_url(hass, f"/assets/{DOMAIN}/iconset.js?{VERSION}")
+    add_extra_js_url(hass, f"/assets/{DOMAIN}/iconset.js?{version}")
     add_extra_js_url(hass, f"{ROOM_CARD_URL}?{card_hash}")
-    _register_panel(hass, panel_hash)
+    _register_panel(hass, panel_hash, version)
 
 
-def _register_panel(hass, panel_hash):
+def _register_panel(hass, panel_hash, version):
     async_register_built_in_panel(
         hass,
         component_name="custom",
@@ -104,7 +106,7 @@ def _register_panel(hass, panel_hash):
                 "name": "scene-studio-panel",
                 "module_url": f"{PANEL_URL}?{panel_hash}"
             },
-            "version": VERSION
+            "version": version
         },
     )
 

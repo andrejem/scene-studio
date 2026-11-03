@@ -49,6 +49,13 @@ async def setup(hass, monkeypatch):
     await hass.async_block_till_done()
 
 
+def runtime(hass):
+    """Runtime data of the loaded config entry."""
+    from custom_components.scene_studio.data import find_data
+
+    return find_data(hass)
+
+
 async def ws(client, msg):
     await client.send_json_auto_id(msg)
     return await client.receive_json()

@@ -6,7 +6,7 @@ import pytest
 
 from homeassistant.core import HomeAssistant
 
-from .test_custom_presets import setup, userdata  # noqa: F401  (fixture and helpers)
+from .test_custom_presets import setup, userdata, runtime  # noqa: F401  (fixture and helpers)
 
 PRESET = "940fd864-51e1-4761-95d3-75d4d68835ea"  # Arctic aurora, several colors
 
@@ -43,7 +43,7 @@ async def _setup(hass, monkeypatch):
     hass.states.async_set("light.signe", "off", attrs)
     hass.states.async_set("light.bulb", "off", attrs)
     await setup(hass, monkeypatch)
-    hass.data["scene_studio"]["gradient"].register("light.signe", "zigbee2mqtt/Signe")
+    runtime(hass).gradient.register("light.signe", "zigbee2mqtt/Signe")
     return published, turned_on
 
 

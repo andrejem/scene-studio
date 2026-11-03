@@ -77,7 +77,7 @@ class SavedSceneEntity(Scene):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
-    store = hass.data[DOMAIN]["saved_scenes"]
+    store = entry.runtime_data.saved_scenes
     entities: dict[str, SavedSceneEntity] = {}
 
     def _add(scene):

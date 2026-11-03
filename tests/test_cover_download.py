@@ -4,7 +4,7 @@ import pytest
 
 from homeassistant.core import HomeAssistant
 
-from .test_custom_presets import setup, userdata  # noqa: F401  (fixture and helpers)
+from .test_custom_presets import setup, userdata, runtime  # noqa: F401  (fixture and helpers)
 from .test_music_scenes import _image
 
 PLAYER = "media_player.living_room"
@@ -17,7 +17,7 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 
 async def colors(hass, picture):
     hass.states.async_set(PLAYER, "playing", {"entity_picture": picture, "media_album_name": "A"})
-    music = hass.data["scene_studio"]["music_scenes"]
+    music = runtime(hass).music_scenes
     return await music._colors_from_cover("test", hass.states.get(PLAYER))
 
 

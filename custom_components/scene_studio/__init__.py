@@ -7,7 +7,7 @@
 # Import from Scene Presets (import_scene_presets, admins only).
 # Music scenes: colors from the album cover of a media player (music_scenes.py).
 # Gradient lamps get all colors of the preset (gradient.py, option gradient).
-# The integration can be reloaded (the panel is removed on unload).
+# The integration can be reloaded: everything that runs lives in entry.runtime_data (data.py).
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
@@ -28,6 +28,8 @@ from .migrate import async_import_scene_presets
 from .music_scenes import MusicScenes, AUTO_START_OPTIONS, AUTO_START_NEVER, runtime_preset_id, is_music_scene
 from .file_utils import RUNTIME_PRESETS
 from .gradient import GradientLights
+from .data import SceneStudioConfigEntry, SceneStudioData, get_data
+from .file_utils import async_ensure_directories, async_reload_preset_data
 
 PLATFORMS = ["scene"]
 
@@ -125,15 +127,13 @@ STOP_DYNAMIC_SCENES_FOR_TARGETS_SCHEMA = vol.Schema({
 
 _LOGGER = logging.getLogger(__name__)
 
-dynamic_scene_manager = DynamicSceneManager()
-
-
 def _detach_from_dynamic_scenes(hass, light_entity_ids):
     """Remove lights from running dynamic scenes; a scene without lights left is stopped."""
     targets = set(light_entity_ids)
     for light_entity_id in light_entity_ids:
         targets.update(resolve_entity_ids(hass, light_entity_id))
-    for scene in list(dynamic_scene_manager.get_all()):
+    manager = get_data(hass).dynamic_scenes
+    for scene in list(manager.get_all()):
         scene_ids = list(scene.parameters.get("light_entity_ids", []))
         leaving = [
             entity_id for entity_id in scene_ids
@@ -142,28 +142,22 @@ def _detach_from_dynamic_scenes(hass, light_entity_ids):
         if not leaving:
             continue
         if len(leaving) == len(scene_ids):
-            dynamic_scene_manager.delete_by_id(scene.id)
+            manager.delete_by_id(scene.id)
         else:
             for entity_id in leaving:
                 scene.remove_light(entity_id)
 
 
 async def async_setup(hass, config):
-    saved_scene_store = SavedSceneStore(hass)
-    await saved_scene_store.async_load()
-    hass.data.setdefault(DOMAIN, {})["saved_scenes"] = saved_scene_store
-    optional_lights = OptionalLights(hass, dynamic_scene_manager)
-    hass.data[DOMAIN]["optional_lights"] = optional_lights
-    music_scenes = MusicScenes(hass, saved_scene_store, dynamic_scene_manager)
-    hass.data[DOMAIN]["music_scenes"] = music_scenes
-    hass.data[DOMAIN]["gradient"] = GradientLights(hass)
+    # Services are registered once; they work on the runtime data of the loaded config entry.
 
     async def apply_preset_service(call):
+        d = get_data(hass)
         preset_id = call.data.get(ATTR_SCENE_PRESET_ID)
         targets = call.data.get(ATTR_TARGETS)
         if preset_id == MUSIC_PRESET_ID:
             # Colors of the cover playing in the room right now; no music, nothing happens
-            preset_id = await music_scenes.async_adhoc_preset(targets)
+            preset_id = await d.music_scenes.async_adhoc_preset(targets)
             if preset_id is None:
                 return
         brightness_override = call.data.get(ATTR_BRIGHTNESS)
@@ -188,8 +182,8 @@ async def async_setup(hass, config):
         light_entity_ids, optional_on, optional_ids = split_optional(
             hass, light_entity_ids, call.data.get(ATTR_OPTIONAL), call.data.get(ATTR_KEEP_GROUPS)
         )
-        optional_lights.forget_overlapping(light_entity_ids, optional_ids)
-        music_scenes.release_lights(light_entity_ids + optional_ids)
+        d.optional_lights.forget_overlapping(light_entity_ids, optional_ids)
+        d.music_scenes.release_lights(light_entity_ids + optional_ids)
         light_brightness = call.data.get(ATTR_LIGHT_BRIGHTNESS)
         light_entity_ids, off_ids = split_off(hass, light_entity_ids, light_brightness)
         optional_on, optional_off = split_off(hass, optional_on, light_brightness)
@@ -206,19 +200,20 @@ async def async_setup(hass, config):
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
             gradient=call.data.get(ATTR_GRADIENT, True),
         )
-        optional_lights.register(
+        d.optional_lights.register(
             optional_ids, light_entity_ids, preset_id, brightness_override,
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
         )
 
 
     async def start_dynamic_scene(call):
+        d = get_data(hass)
         preset_id = call.data.get(ATTR_SCENE_PRESET_ID)
         targets = call.data.get(ATTR_TARGETS)
         interval = call.data.get(ATTR_INTERVAL)
         if preset_id == MUSIC_PRESET_ID:
             # Colors of the cover playing in the room right now; no music, nothing happens
-            preset_id = await music_scenes.async_adhoc_preset(targets)
+            preset_id = await d.music_scenes.async_adhoc_preset(targets)
             if preset_id is None:
                 return None
 
@@ -245,8 +240,8 @@ async def async_setup(hass, config):
         light_entity_ids, optional_on, optional_ids = split_optional(
             hass, light_entity_ids, call.data.get(ATTR_OPTIONAL), call.data.get(ATTR_KEEP_GROUPS)
         )
-        optional_lights.forget_overlapping(light_entity_ids, optional_ids)
-        music_scenes.release_lights(light_entity_ids + optional_ids)
+        d.optional_lights.forget_overlapping(light_entity_ids, optional_ids)
+        d.music_scenes.release_lights(light_entity_ids + optional_ids)
         light_brightness = call.data.get(ATTR_LIGHT_BRIGHTNESS)
         light_entity_ids, off_ids = split_off(hass, light_entity_ids, light_brightness)
         optional_on, optional_off = split_off(hass, optional_on, light_brightness)
@@ -269,19 +264,21 @@ async def async_setup(hass, config):
             parameters[ATTR_INTERVAL_RANGE] = _build_range(call.data, ATTR_INTERVAL_MIN, ATTR_INTERVAL_MAX, interval)
             parameters[ATTR_TRANSITION_RANGE] = _build_range(call.data, ATTR_TRANSITION_MIN, ATTR_TRANSITION_MAX, transition)
 
-        result = dynamic_scene_manager.create_new(hass, parameters, interval)
-        optional_lights.register(
+        result = d.dynamic_scenes.create_new(hass, parameters, interval)
+        d.optional_lights.register(
             optional_ids, light_entity_ids, preset_id, brightness_override, result["id"],
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
         )
         return result
 
     async def stop_dynamic_scene(call):
+        d = get_data(hass)
         scene_id = call.data.get(ATTR_DYNAMIC_SCENE_ID)
 
-        dynamic_scene_manager.delete_by_id(scene_id)
+        d.dynamic_scenes.delete_by_id(scene_id)
 
     async def stop_dynamic_scenes_for_targets(call):
+        d = get_data(hass)
         targets = call.data.get(ATTR_TARGETS)
 
         entity_ids = ensure_list(targets.get("entity_id"))
@@ -302,39 +299,44 @@ async def async_setup(hass, config):
         target_ids = set(light_entity_ids)
         for target_id in light_entity_ids:
             target_ids.update(resolve_entity_ids(hass, target_id))
-        for scene in list(dynamic_scene_manager.get_all()):
+        for scene in list(d.dynamic_scenes.get_all()):
             scene_ids = set(scene.parameters.get("light_entity_ids", []))
             for scene_light_id in list(scene_ids):
                 scene_ids.update(resolve_entity_ids(hass, scene_light_id))
             if scene_ids & target_ids:
-                dynamic_scene_manager.delete_by_id(scene.id)
+                d.dynamic_scenes.delete_by_id(scene.id)
 
         return True
 
     async def stop_all_dynamic_scenes(call):
-        dynamic_scene_manager.stop_all()
+        d = get_data(hass)
+        d.dynamic_scenes.stop_all()
 
     async def get_dynamic_scenes(call):
-        return dynamic_scene_manager.get_all_as_dict()
+        d = get_data(hass)
+        return d.dynamic_scenes.get_all_as_dict()
 
     async def save_scene(call):
-        scene = await saved_scene_store.async_save_scene(dict(call.data))
+        d = get_data(hass)
+        scene = await d.saved_scenes.async_save_scene(dict(call.data))
         return {"scene": scene}
 
     async def delete_saved_scene(call):
+        d = get_data(hass)
         scene_id = call.data.get(ATTR_DYNAMIC_SCENE_ID)
-        if not await saved_scene_store.async_delete_scene(scene_id):
+        if not await d.saved_scenes.async_delete_scene(scene_id):
             raise vol.Invalid(f"Saved scene '{scene_id}' not found.")
 
     async def activate_saved_scene(call):
+        d = get_data(hass)
         scene_id = call.data.get(ATTR_DYNAMIC_SCENE_ID)
-        scene = saved_scene_store.get(scene_id)
+        scene = d.saved_scenes.get(scene_id)
         if scene is None:
             raise vol.Invalid(f"Saved scene '{scene_id}' not found.")
 
         override = call.data.get(ATTR_TARGETS)
         if is_music_scene(scene) and not override:
-            await music_scenes.async_activate(scene)
+            await d.music_scenes.async_activate(scene)
             return
 
         service, service_data = build_service_call(scene, call.data.get(ATTR_DYNAMIC))
@@ -441,8 +443,9 @@ async def async_setup(hass, config):
     )
 
     async def import_scene_presets(call):
+        d = get_data(hass)
         return await async_import_scene_presets(
-            hass, saved_scene_store,
+            hass, d.saved_scenes,
             take_over_entities=call.data["take_over_entities"],
             overwrite=call.data["overwrite"],
         )
@@ -463,28 +466,40 @@ async def async_setup(hass, config):
 
     return True
 
-async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> bool:
-    hass.data.setdefault(DOMAIN, {})
+async def async_setup_entry(hass: HomeAssistant, entry: SceneStudioConfigEntry) -> bool:
+    await async_ensure_directories(hass)
+    await async_reload_preset_data(hass)
+
+    saved_scenes = SavedSceneStore(hass)
+    await saved_scenes.async_load()
+    dynamic_scenes = DynamicSceneManager()
+    optional_lights = OptionalLights(hass, dynamic_scenes)
+    music_scenes = MusicScenes(hass, saved_scenes, dynamic_scenes)
+    gradients = GradientLights(hass)
+    entry.runtime_data = SceneStudioData(
+        saved_scenes=saved_scenes,
+        dynamic_scenes=dynamic_scenes,
+        optional_lights=optional_lights,
+        music_scenes=music_scenes,
+        gradient=gradients,
+    )
+    # stopped in reverse order on unload
+    entry.async_on_unload(dynamic_scenes.stop_all)
+    entry.async_on_unload(optional_lights.async_shutdown)
+    entry.async_on_unload(music_scenes.async_shutdown)
 
     await async_setup_view(hass)
+    async_setup_websocket_api(hass, dynamic_scenes, saved_scenes)
 
-    async_setup_websocket_api(hass, dynamic_scene_manager, hass.data[DOMAIN]["saved_scenes"])
-
-    gradients = hass.data[DOMAIN].get("gradient")
-    if gradients is not None:
-        # Finds gradient lamps once MQTT is up; scenes work without it
-        entry.async_create_background_task(hass, gradients.async_start(), "scene_studio_gradient_lights")
-        entry.async_on_unload(gradients.async_stop)
+    # Finds gradient lamps once MQTT is up; scenes work without it
+    entry.async_create_background_task(hass, gradients.async_start(), "scene_studio_gradient_lights")
+    entry.async_on_unload(gradients.async_stop)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
-async def async_unload_entry(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: SceneStudioConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         # the panel is registered again by async_setup_entry (reload of the integration)
