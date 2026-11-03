@@ -71,6 +71,7 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
 - New service parameters are optional and keep the current behavior by default.
 - A new or changed service, service field or config flow text goes into `services.yaml` **and**
   `translations/en.json` (name and description for every service and field).
+  No curly braces in these texts: hassfest reads `{...}` as a placeholder and fails.
 - Do not use names of Scene Presets (domain, services, panel, card, storage keys, browser storage
   keys): both integrations must work side by side.
 - Update `README.md` and `docs/` together with every functional change. `README.md` is also shown
