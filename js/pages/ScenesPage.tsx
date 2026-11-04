@@ -1,5 +1,5 @@
 // Added by andrejem (2026): saved scenes grouped by room (area of the scene entity), tap to activate,
-// pencil to edit, "new scene" per room
+// pencil to edit, "new scene" per room; tiles have the same size as on the presets tab
 
 import React, {useMemo} from "react";
 import {Translate} from "../i18n";
@@ -144,9 +144,10 @@ export const ScenesPage: React.FunctionComponent<{
                                 <span className={"sp-secondary sp-small"}>{count(g.scenes.length)}</span>
                             </div>
                         }
-                        <div className={"sp-grid"}>
+                        <div className={"sp-grid small"}>
                             {g.scenes.map(({scene}) => (
                                 <PresetTile
+                                    small
                                     key={"scene_" + scene.id}
                                     id={scene.id}
                                     name={stripRoomName(scene.name, g.key === NO_ROOM ? "" : g.name)}
@@ -162,6 +163,7 @@ export const ScenesPage: React.FunctionComponent<{
                                 />
                             ))}
                             <NewTile
+                                small
                                 label={t("new_scene")}
                                 icon={"mdi:plus"}
                                 onClick={() => onNew(g.key === NO_ROOM ? undefined : g.key)}
