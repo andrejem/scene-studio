@@ -129,5 +129,7 @@ data:
 | `scene_studio/get_dynamic_scenes` | List running dynamic scenes |
 | `scene_studio/resolve_targets` | Lights a scene with these targets controls |
 | `scene_studio/get_music_scenes` | Active music scenes with speaker, cover and current colors |
-| `scene_studio/save_custom_preset`, `delete_custom_preset`, `set_preset_image`, `reset_preset` | Presets from photos (admins; the preset is passed as `preset_id`) |
+| `scene_studio/save_custom_preset`, `delete_custom_preset`, `set_preset_image`, `reset_preset` | Own presets from colors or photos, colors and default brightness of built-in presets (admins; the preset is passed as `preset_id`) – see [Own presets](Scene%20from%20photo.md) |
+| `scene_studio/set_preset_hidden` | Hide a built-in preset or show it again (admins) |
+| `scene_studio/set_scene_order` | Order of the saved scenes, `scene_ids` in the new order (admins) |
 | `scene_studio/import_status`, `scene_studio/import` | Import from Scene Presets (admins) |

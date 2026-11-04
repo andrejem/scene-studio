@@ -10,6 +10,11 @@ picture as entity picture. Turning it on (`scene.turn_on`, a dashboard tile, the
 keeps its entity ID. The area of the scene entity is the **room** of the scene in the panel and on
 the room card.
 
+The state of the scene entity is the time it was **last activated** – also when it was started with
+`scene_studio.activate_saved_scene` (panel, buttons, automations); a lamp mode (`targets`) does not
+count. Panel and room card outline that scene as the active one. Attributes: `saved_scene_id`,
+`preset_id`, `dynamic`, `music` and `order` (position set with **Arrange** in the panel).
+
 ## In the panel
 
 ![Scenes tab](../img/panel-scenes.png)
@@ -21,9 +26,11 @@ the room card.
    Enter a name, check the room and click **Save**.
 
 Or click **New scene** in the **Scenes** tab; the dashed tile of a room starts with that room and
-its lights. The **pencil** on a scene opens the scene editor. Details: [Panel](Panel.md).
+its lights. A new scene is named after room and preset (*Living room Relax*) until you type a name.
+The **pencil** on a scene opens the scene editor. **Arrange** next to a room name sorts the scenes by
+drag and drop, also for all rooms at once. Details: [Panel](Panel.md).
 
-Each scene can set brightness per light, leave lights out, let lights join only if they are on and
+Each scene can set brightness per light, not control some lights, let lights join only if they are on and
 control light groups as one light: [Lights of a scene](Lights%20of%20a%20scene.md).
 
 ## In automations

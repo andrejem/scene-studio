@@ -38,13 +38,13 @@ each room on your dashboard with the room card.
 |---|---|
 | **Presets for any light** | 120+ built-in color presets, applied to lights, groups, areas, floors or labels. Lights that can only do white get the matching color temperature. |
 | **Saved scenes** | Preset + lights + settings stored in Home Assistant, each one a `scene.*` entity for dashboards, automations and voice. [Saved scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Saved%20scenes.md) |
-| **Panel** | Scenes grouped by room, presets with search and favorites, a scene editor, running dynamic scenes at a glance. Phone and desktop, light and dark theme, English and German. [Panel](https://github.com/andrejem/scene-studio/blob/main/docs/Panel.md) |
+| **Panel** | Scenes grouped by room, presets with search and favorites, a scene editor, running dynamic scenes at a glance. **Arrange** scenes by drag and drop – the same order in every room if you like, room cards follow it. Phone and desktop, light and dark theme, English and German. [Panel](https://github.com/andrejem/scene-studio/blob/main/docs/Panel.md) |
 | **Dynamic scenes** | The colors drift slowly between the lights. With **per-light timing** every light changes on its own schedule. [Per-light timing](https://github.com/andrejem/scene-studio/blob/main/docs/Per-light%20timing.md) |
 | **Lights of a scene** | Brightness per light, lights that only join when they are on, lights the scene does not control, light groups as one light. Gradient lamps (e.g. Hue Signe in Zigbee2MQTT) show all colors of the preset. [Lights of a scene](https://github.com/andrejem/scene-studio/blob/main/docs/Lights%20of%20a%20scene.md) |
 | **Lamp modes** | Give one lamp another scene of the room while the rest keeps going. [Lamp modes](https://github.com/andrejem/scene-studio/blob/main/docs/Lamp%20modes.md) |
 | **Music scenes** | The lights take the colors of the album cover that is playing and change with every new cover. They can start by themselves when music starts or follows you into another room, and return to their state before when the music stops. [Music scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Music%20scenes.md) |
 | **Own presets** | Pick colors (color or white tones, like the Hue app) or let a photo give them – no JSON, no restart. Built-in presets can get other colors or another default brightness, or be hidden. [Own presets](https://github.com/andrejem/scene-studio/blob/main/docs/Scene%20from%20photo.md) |
-| **Room card** | One card per room: brightness slider, scene tiles with pictures, light rows. Built from the area automatically, visual editor. [Room card](https://github.com/andrejem/scene-studio/blob/main/docs/Room%20card.md) |
+| **Room card** | One card per room: brightness slider, scene tiles with pictures (in the order set in the panel, the active scene outlined), light rows. Built from the area automatically, visual editor. [Room card](https://github.com/andrejem/scene-studio/blob/main/docs/Room%20card.md) |
 
 ## Installation
 
@@ -119,7 +119,7 @@ described in the [service reference](https://github.com/andrejem/scene-studio/bl
 
 | Page | Content |
 |---|---|
-| [Panel](https://github.com/andrejem/scene-studio/blob/main/docs/Panel.md) | Scenes tab, presets tab, scene editor |
+| [Panel](https://github.com/andrejem/scene-studio/blob/main/docs/Panel.md) | Scenes tab (arrange scenes), presets tab (new presets, hidden presets), scene editor |
 | [Saved scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Saved%20scenes.md) | Scene entities, saving and editing, services |
 | [Lights of a scene](https://github.com/andrejem/scene-studio/blob/main/docs/Lights%20of%20a%20scene.md) | Brightness per light, only if on, leave out, groups as one light, areas |
 | [Lamp modes](https://github.com/andrejem/scene-studio/blob/main/docs/Lamp%20modes.md) | Another scene for single lamps of a room |
