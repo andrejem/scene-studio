@@ -95,7 +95,10 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   No curly braces in these texts: hassfest reads `{...}` as a placeholder and fails.
 - Do not use names of Scene Presets (domain, services, panel, card, storage keys, browser storage
   keys): both integrations must work side by side.
-- Update `README.md` and `docs/` together with every functional change. `README.md` is also shown
+- Update `README.md` and `docs/` together with every functional change: every new feature belongs in the
+  features table of the README and on its docs page (Panel, Saved scenes, Room card, Services, …); search
+  all pages for renamed terms. A release is made only after the pull request is merged into `main` and
+  the version in `manifest.json` matches the tag. `README.md` is also shown
   in HACS, so it uses absolute URLs for images and links.
 - Code changes go through a feature branch and a pull request.
 
