@@ -11,6 +11,8 @@ A new cover means new colors. When the music stops, the lights go back to how th
   There is nothing else to switch on.
 - The colors come from the cover that is playing on the speaker of the scene's room (a Sonos if
   there is one). You can also choose another speaker.
+- The lights get the **hues** of the cover, but always **vivid**: a muted or pastel cover still
+  gives strong colors on the lamps (at least 80 % saturation).
 - **No music, no change.** As long as no cover is known, the lights stay as they are.
 - When the music stops (or moves on to another room), the lights return to their state before the
   music scene after 30 seconds. If they were off, they turn off.

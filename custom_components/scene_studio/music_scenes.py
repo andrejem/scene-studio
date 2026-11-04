@@ -63,6 +63,10 @@ MAX_COLORS = 5
 _INTERNAL = contextvars.ContextVar("scene_studio_music_internal", default=False)
 
 
+# lowest saturation of a cover color on the lights
+VIVID_MIN = 0.8
+
+
 def runtime_preset_id(scene_id: str) -> str:
     return f"music_{scene_id}"
 
@@ -116,12 +120,15 @@ def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tupl
     hsv = []
     for k in picked:
         hue = (math.atan2(hue_y[k], hue_x[k]) / (2 * math.pi)) % 1
-        sat = min(1.0, sat_sum[k] / weight[k] * 1.15 + 0.1)
+        # lamps look washed out with the cover's own saturation (often 40-60 %): keep the hue,
+        # but always use a vivid 80-100 % for the light
+        cover_sat = sat_sum[k] / weight[k]
+        sat = VIVID_MIN + (1.0 - VIVID_MIN) * min(1.0, max(0.0, (cover_sat - 0.25) / 0.6))
         hsv.append((hue, sat))
     if len(hsv) < 3:
         for hue, sat in list(hsv):
             hsv.append(((hue + 0.035) % 1, sat))
-            hsv.append(((hue - 0.035) % 1, max(0.35, sat * 0.75)))
+            hsv.append(((hue - 0.035) % 1, max(VIVID_MIN, sat * 0.9)))
 
     colors = []
     for hue, sat in hsv[: max(max_colors, 3)]:

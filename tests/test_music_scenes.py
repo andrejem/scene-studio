@@ -43,6 +43,22 @@ def test_extract_cover_colors():
     assert extract_cover_colors(_image([(128, 128, 128), (10, 10, 10), (250, 250, 250)])) is None
 
 
+def test_pale_cover_gives_vivid_colors():
+    """A muted cover keeps its hue but the lights get a vivid color (at least 80 % saturation)."""
+    import colorsys
+
+    from homeassistant.util import color as color_util
+
+    from custom_components.scene_studio.music_scenes import extract_cover_colors
+
+    colors = extract_cover_colors(_image([(150, 100, 200), (110, 140, 190)]))  # about 35-50 % saturation
+    assert colors
+    for x, y in colors:
+        r, g, b = color_util.color_xy_to_RGB(x, y)
+        _, sat, _ = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+        assert sat >= 0.75, (x, y, sat)
+
+
 def fake_lights(hass, entity_ids):
     attrs = {"supported_color_modes": ["xy", "color_temp"], "color_mode": "xy"}
     for entity_id in entity_ids:
