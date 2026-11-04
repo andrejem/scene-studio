@@ -10,7 +10,7 @@ the same rules the services use.
 |---|---|---|
 | Percent field | `light_brightness` | Own brightness for this light, e.g. 5 % for a long LED strip. Empty = scene brightness |
 | **Only if on** | `optional` | Takes part only if the light is on when the scene starts, joins later when it is turned on |
-| **Leave out** | `exclude` | The scene does not touch this light. Left-out lights are listed with **Add back** |
+| **Don't control** | `exclude` | The scene does not touch this light: it is neither turned on nor off nor changed. These lights are listed with **Control again** |
 | **As one light** | `keep_groups` | All lights of a light group get the same color. **Light by light** undoes it |
 
 ## Brightness per light, 0 % = off
@@ -53,6 +53,9 @@ up. Home Assistant's light entity knows only one color, so the gradient is sent 
 MQTT. In the scene editor, gradient lamps are marked *gradient* under **Lights of this scene**, and
 **All colors on gradient lamps** switches it off for the scene (`gradient: false`): the lamps then get
 one color like any other lamp. Without Zigbee2MQTT (e.g. Hue Bridge) the lamps get one color as before.
+
+The colors of the gradient are exactly the colors of the preset, as saturated as on the other lamps.
+(Up to 3.3, gradients came out pale: Zigbee2MQTT reads gradient colors without the usual sRGB gamma.)
 
 ## Optional lights
 

@@ -1,7 +1,8 @@
 # Modified by andrejem (2026): added scene_studio/get_saved_scenes and
 # scene_studio/resolve_targets (lights of a scene, for brightness per light) commands,
 # commands for presets created in the panel and replaced preset images (admin only),
-# import from Scene Presets, active music scenes (get_music_scenes), gradient lamps in resolve_targets
+# import from Scene Presets, active music scenes (get_music_scenes), gradient lamps in resolve_targets;
+# default brightness of built-in presets (set_preset_image bri), presets made from colors (generated)
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -128,6 +129,7 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             vol.Required("bri"): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
             vol.Required("lights"): [LIGHT_COLOR],
             vol.Optional("image"): cv.string,
+            vol.Optional("generated"): cv.boolean,
         }
     )
     @websocket_api.require_admin
@@ -162,12 +164,15 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             vol.Required("preset_id"): cv.string,
             vol.Optional("image"): cv.string,
             vol.Optional("lights"): [LIGHT_COLOR],
+            vol.Optional("bri"): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
         }
     )
     @websocket_api.require_admin
     @websocket_api.async_response
     async def ws_set_preset_image(hass, connection, msg) -> None:
-        _, ok = await _run(hass, connection, msg, set_override, msg["preset_id"], msg.get("image"), msg.get("lights"))
+        _, ok = await _run(
+            hass, connection, msg, set_override, msg["preset_id"], msg.get("image"), msg.get("lights"), msg.get("bri")
+        )
         if ok:
             _refresh_scenes(msg["preset_id"])
             connection.send_result(msg["id"], {})

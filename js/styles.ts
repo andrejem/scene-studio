@@ -479,11 +479,13 @@ button { font: inherit; color: inherit; }
 }
 .sp-sheet-head {
     flex: none;
+    /* full screen on phones: keep the buttons below the status bar (iPhone notch, Companion app) */
+    box-sizing: content-box;
     height: 56px;
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 0 8px;
+    padding: env(safe-area-inset-top, 0px) calc(8px + env(safe-area-inset-right, 0px)) 0 calc(8px + env(safe-area-inset-left, 0px));
     background: var(--sp-card);
     border-bottom: 1px solid var(--sp-line);
 }

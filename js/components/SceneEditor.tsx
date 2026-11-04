@@ -1,6 +1,8 @@
 // Added by andrejem (2026): scene editor (full screen on phones, side panel on wide screens).
 // Holds its own copy of the scene, so editing no longer depends on what the page currently shows.
 // Replaces the former "last action" dialog: the scene entity id is shown for automations.
+// A new scene is named after room and preset until a name is typed; the head stays below the
+// status bar on iPhones (safe area).
 // Music scenes (3.2): with the preset "Music" the colors come from the album cover of a speaker,
 // the editor then shows the speaker and when the scene starts by itself.
 // Gradient lamps (3.3): switch "all colors on gradient lamps", shown when the scene has such a lamp.
@@ -50,6 +52,8 @@ export const SceneEditor: React.FunctionComponent<{
     const isAdmin = !!hass?.user?.is_admin;
 
     const [name, setName] = useState("");
+    // a new scene is named after room and preset until the name is typed by hand
+    const [nameAuto, setNameAuto] = useState(false);
     const [areaId, setAreaId] = useState<string | undefined>(undefined);
     const [presetId, setPresetId] = useState("");
     const [targets, setTargets] = useState<HaTargetSelectorValue>({});
@@ -78,6 +82,7 @@ export const SceneEditor: React.FunctionComponent<{
             return;
         }
         setName(draft.name);
+        setNameAuto(!draft.scene && !draft.name);
         setAreaId(draft.areaId);
         setPresetId(draft.presetId);
         setTargets(draft.targets ?? {});
@@ -195,6 +200,16 @@ export const SceneEditor: React.FunctionComponent<{
     const stateName = (entityId: string) => hass?.states?.[entityId]?.attributes?.friendly_name ?? entityId;
 
     const preset = presetMap[presetId];
+
+    useEffect(() => {
+        if (!nameAuto || !presetId) {
+            return;
+        }
+        const presetName = presetMap[presetId]?.name;
+        if (presetName) {
+            setName([areaName(hass, areaId), presetName].filter(Boolean).join(" "));
+        }
+    }, [nameAuto, presetId, areaId, presetMap]); // eslint-disable-line react-hooks/exhaustive-deps
     const entityId = editing ? sceneEntityId(hass, editing.id) : undefined;
     const musicOn = presetId === MUSIC_PRESET_ID;
     const canSave = !!name.trim() && !!presetId && hasTargets(targets) && !busy;
@@ -386,7 +401,10 @@ export const SceneEditor: React.FunctionComponent<{
                                     type={"text"}
                                     value={name}
                                     placeholder={t("name_placeholder")}
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={(e) => {
+                                        setName(e.target.value);
+                                        setNameAuto(false);
+                                    }}
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter" && canSave) {
                                             save(false);

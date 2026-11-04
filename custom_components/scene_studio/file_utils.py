@@ -47,6 +47,9 @@ def load_preset_data():
                     preset["img"] = override["img"]
                 if override.get("lights"):
                     preset["lights"] = override["lights"]
+                if override.get("bri"):
+                    preset["original_bri"] = preset.get("bri")
+                    preset["bri"] = override["bri"]
                 preset["overridden"] = True
         data.get("presets", []).extend([{**d, 'custom': True} for d in custom.get("presets", [])])
         data.get("categories", []).extend([{**d, 'custom': True} for d in custom.get("categories", [])])

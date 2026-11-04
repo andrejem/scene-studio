@@ -23,6 +23,8 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   - `gradient.py` - gradient lamps (Hue Signe, Play gradient … in Zigbee2MQTT): found via
     `+/bridge/devices`, mapped to light entities by the IEEE address in the device identifiers;
     `apply_preset` sends them all preset colors as `gradient` over MQTT (option `gradient`, default true)
+    Zigbee2MQTT reads gradient hex colors as **linear Wide RGB D65 without gamma** (and reports them
+    in reverse order): `_hex()` converts xy the same way, never via `color_xy_to_RGB` (pale colors)
   - `music_scenes.py` - music scenes: saved scenes with the preset Music (`MUSIC_PRESET_ID`) take the
     colors of the album cover of a speaker. Colors live in `RUNTIME_PRESETS` (`file_utils.py`,
     `music_<scene id>`), which `apply_preset` checks first. Sessions per scene: snapshot of the lights,
@@ -59,7 +61,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   `components/RunningStrip.tsx` running dynamic scenes, `components/PhotoPresetDialog.tsx` presets
   from photos, `components/ImportBanner.tsx` import from Scene Presets, `tunables.ts` settings ↔
   service calls, `styles.ts` CSS with Home Assistant theme variables, `i18n.ts` texts EN/DE,
-  `palette.ts` color picking
+  `palette.ts` color picking; `components/ColorEditor.tsx` color/white tabs (Kelvin ↔ xy); `PhotoPresetDialog.tsx` makes
+  presets from colors (picture = gradient, `generated`) or photos and changes built-in presets (overrides
+  img, lights, bri)
 - `tests/` - pytest tests
 - `docs/` - user documentation (one page per feature, `Services.md` reference); `img/` screenshots
   for README and docs, made with the English UI

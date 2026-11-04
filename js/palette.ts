@@ -1,5 +1,6 @@
 // Added by andrejem (2026): picks the dominant colors of a photo for a light preset and converts
-// between sRGB and CIE xy (the color space the presets use).
+// between sRGB and CIE xy (the color space the presets use); hue/saturation and color temperature
+// (white tones) for the color picker of presets.
 
 export type RGB = [number, number, number];
 export type XY = {x: number, y: number};
@@ -72,7 +73,7 @@ export function hexToRgb(hex: string): RGB {
     return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
 }
 
-function rgbToHsv([r, g, b]: RGB): [number, number, number] {
+export function rgbToHsv([r, g, b]: RGB): [number, number, number] {
     const R = r / 255, G = g / 255, B = b / 255;
     const max = Math.max(R, G, B), min = Math.min(R, G, B), d = max - min;
     let h = 0;
@@ -86,7 +87,7 @@ function rgbToHsv([r, g, b]: RGB): [number, number, number] {
     return [h, max === 0 ? 0 : d / max, max];
 }
 
-function hsvToRgb([h, s, v]: [number, number, number]): RGB {
+export function hsvToRgb([h, s, v]: [number, number, number]): RGB {
     const c = v * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = v - c;
     const [r, g, b] =
         h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] :
@@ -192,4 +193,30 @@ export function extractPalette(pixels: Uint8ClampedArray | Uint8Array, count: nu
         if (picked.length >= count) break;
     }
     return picked.map(lab => forLight(labToRgb(lab)));
+}
+
+
+/** xy of a white tone (Planckian locus, Kim et al. approximation), 1667–25000 K. */
+export function kelvinToXy(kelvin: number): XY {
+    const T = Math.max(1667, Math.min(25000, kelvin));
+    const x = T <= 4000
+        ? -0.2661239e9 / T ** 3 - 0.2343589e6 / T ** 2 + 0.8776956e3 / T + 0.179910
+        : -3.0258469e9 / T ** 3 + 2.1070379e6 / T ** 2 + 0.2226347e3 / T + 0.240390;
+    const y = T <= 2222
+        ? -1.1063814 * x ** 3 - 1.34811020 * x ** 2 + 2.18555832 * x - 0.20219683
+        : T <= 4000
+            ? -0.9549476 * x ** 3 - 1.37418593 * x ** 2 + 2.09137015 * x - 0.16748867
+            : 3.0817580 * x ** 3 - 5.87338670 * x ** 2 + 3.75112997 * x - 0.37001483;
+    return {x: Math.round(x * 10000) / 10000, y: Math.round(y * 10000) / 10000};
+}
+
+/** Color temperature of an xy point if it is a white tone (close to the Planckian locus), else null. */
+export function xyToKelvin({x, y}: XY): number | null {
+    const n = (x - 0.3320) / (0.1858 - y);
+    const kelvin = 449 * n ** 3 + 3525 * n ** 2 + 6823.3 * n + 5520.33; // McCamy
+    if (!isFinite(kelvin) || kelvin < 1800 || kelvin > 7000) {
+        return null;
+    }
+    const w = kelvinToXy(kelvin);
+    return Math.hypot(w.x - x, w.y - y) < 0.012 ? Math.round(kelvin / 50) * 50 : null;
 }

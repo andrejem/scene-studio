@@ -1,5 +1,6 @@
-# Added by andrejem (2026): presets created in the panel ("scene from photo") and replaced images or
-# colors of existing presets (blocking file access, called in the executor; the caller reloads the presets).
+# Added by andrejem (2026): presets created in the panel (from a photo or from colors, "generated"
+# picture) and replaced images, colors or default brightness of existing presets (blocking file access,
+# called in the executor; the caller reloads the presets).
 # Everything is stored in userdata/custom/presets.json, the same file that
 # hand-written custom presets use: unknown keys and existing entries are kept as they are.
 
@@ -169,7 +170,13 @@ def save_preset(msg):
         preset["img"] = _save_image(msg["image"])
         _remove_image(old_img)
     elif existing is None:
-        raise CustomPresetError("Please choose a photo")
+        raise CustomPresetError("Please choose a photo or colors")
+    if "generated" in msg:
+        # the picture is the gradient of the colors (made in the panel), renewed with the colors
+        if msg["generated"]:
+            preset["generated"] = True
+        else:
+            preset.pop("generated", None)
     if existing is None:
         data["presets"].append(preset)
     _write(data)
@@ -191,11 +198,11 @@ def delete_preset(preset_id, used_by):
     _remove_image(preset.get("img"))
 
 
-def set_override(preset_id, image, lights):
-    """New image and/or colors for a built-in preset. The original stays untouched."""
+def set_override(preset_id, image, lights, bri=None):
+    """New image, colors and/or default brightness for a built-in preset. The original stays untouched."""
     if _builtin(preset_id) is None:
         raise CustomPresetError("Unknown preset")
-    if not image and not lights:
+    if not image and not lights and bri is None:
         raise CustomPresetError("Nothing to change")
     data = _read()
     overrides = data.setdefault("overrides", {})
@@ -206,6 +213,8 @@ def set_override(preset_id, image, lights):
         _remove_image(old_img)
     if lights:
         override["lights"] = _lights(lights)
+    if bri is not None:
+        override["bri"] = max(1, min(255, int(bri)))
     override["changed"] = int(time.time())
     _write(data)
 
