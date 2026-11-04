@@ -177,6 +177,14 @@ button { font: inherit; color: inherit; }
 .sp-group { display: flex; flex-direction: column; gap: 10px; }
 .sp-section-head { display: flex; align-items: baseline; justify-content: space-between; }
 .sp-section-head h3 { margin: 0; font-size: 16px; font-weight: 500; }
+.sp-section-tools, .sp-arrange-actions { display: inline-flex; align-items: center; gap: 8px; }
+.sp-btn.text.sp-arrange { padding: 2px 8px; font-size: 13px; }
+.sp-grid.arranging .sp-drag { touch-action: none; cursor: grab; animation: sp-wiggle 0.28s ease-in-out infinite alternate; }
+.sp-grid.arranging .sp-drag:nth-child(2n) { animation-delay: 0.14s; }
+.sp-grid.arranging .sp-drag.dragging { opacity: 0.6; cursor: grabbing; animation: none; }
+.sp-grid.arranging .sp-drag .tile { pointer-events: none; }
+@keyframes sp-wiggle { from { transform: rotate(-0.8deg); } to { transform: rotate(0.8deg); } }
+@media (prefers-reduced-motion: reduce) { .sp-grid.arranging .sp-drag { animation: none; } }
 
 /* tile grid */
 .sp-grid {

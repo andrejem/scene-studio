@@ -3,7 +3,7 @@
 # commands for presets created in the panel and replaced preset images (admin only),
 # import from Scene Presets, active music scenes (get_music_scenes), gradient lamps in resolve_targets;
 # default brightness of built-in presets (set_preset_image bri), presets made from colors (generated),
-# hiding built-in presets (set_preset_hidden)
+# hiding built-in presets (set_preset_hidden), order of saved scenes (set_scene_order)
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -179,6 +179,20 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             connection.send_result(msg["id"], {})
 
     websocket_api.async_register_command(_hass, ws_set_preset_image)
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): "scene_studio/set_scene_order",
+            vol.Required("scene_ids"): [cv.string],
+        }
+    )
+    @websocket_api.require_admin
+    @websocket_api.async_response
+    async def ws_set_scene_order(hass, connection, msg) -> None:
+        await saved_scene_store.async_set_order(msg["scene_ids"])
+        connection.send_result(msg["id"], {})
+
+    websocket_api.async_register_command(_hass, ws_set_scene_order)
 
     @websocket_api.websocket_command(
         {

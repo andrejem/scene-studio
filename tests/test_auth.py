@@ -169,3 +169,33 @@ async def test_service_activation_is_recorded(hass: HomeAssistant, monkeypatch, 
     await hass.services.async_call("scene_studio", "activate_saved_scene",
                                    {"id": ids["Aurora"], "targets": {"entity_id": ["light.a"]}}, blocking=True)
     assert hass.states.get("scene.aurora").state == "unknown"
+
+
+async def test_scene_order(hass: HomeAssistant, hass_ws_client, hass_read_only_access_token, monkeypatch, userdata):
+    """The order set in the panel is kept, shown as attribute and survives editing a scene."""
+    from custom_components.scene_studio.data import find_data
+
+    await setup(hass, monkeypatch)
+    builtin = next(p for p in userdata.PRESET_DATA["presets"] if not p.get("custom"))
+    ids = []
+    for name in ("Alpha", "Beta", "Gamma"):
+        r = await hass.services.async_call("scene_studio", "save_scene", {
+            "name": name, "preset_id": builtin["id"], "targets": {"entity_id": ["light.a"]},
+        }, blocking=True, return_response=True)
+        ids.append(r["scene"]["id"])
+    client = await hass_ws_client(hass)
+    r = await ws(client, {"type": "scene_studio/set_scene_order", "scene_ids": [ids[2], ids[0], ids[1]]})
+    assert r["success"], r
+    await hass.async_block_till_done()
+    store = find_data(hass).saved_scenes
+    assert [s["name"] for s in store.get_all()] == ["Gamma", "Alpha", "Beta"]
+    assert hass.states.get("scene.gamma").attributes["order"] == 0
+
+    # editing keeps the place
+    await hass.services.async_call("scene_studio", "save_scene", {
+        "id": ids[2], "name": "Gamma", "preset_id": builtin["id"], "targets": {"entity_id": ["light.b"]},
+    }, blocking=True, return_response=True)
+    assert store.get(ids[2])["order"] == 0
+
+    reader = await hass_ws_client(hass, access_token=hass_read_only_access_token)
+    assert not (await ws(reader, {"type": "scene_studio/set_scene_order", "scene_ids": ids}))["success"]

@@ -35,7 +35,7 @@ area: arbeitszimmer
 | `name`        | area name | Title of the room slider                                                  |
 | `columns`     | 3       | Columns of the scene tiles                                                  |
 | `light_columns` | 2     | Columns of the single light rows (groups always use the full width)        |
-| `scenes`      | auto    | Explicit list and order of scene entities instead of all scenes of the area |
+| `scenes`      | auto    | Explicit list and order of scene entities instead of all scenes of the area. In the visual editor the list offers the scenes of the chosen area |
 | `lights`      | auto    | Explicit list of light entities instead of all lights of the area          |
 | `hide`        | –       | Entities (lights or scenes) not to show, e.g. motion-only scenes            |
 | `master`      | auto    | Light (group) used for the room slider                                      |
@@ -57,8 +57,8 @@ area: arbeitszimmer
 
 ## Raumlicht (optional)
 
-The card works without Raumlicht. Without it there is no motion chip, scene tiles are sorted by name
-(use `scenes` to set an order) and room-wide light groups that do not contain every light of the
+The card works without Raumlicht. Without it there is no motion chip, scene tiles follow the order set
+with **Arrange** in the panel (otherwise by name; `scenes` sets an order of its own) and room-wide light groups that do not contain every light of the
 room are shown as rows (use `structural` to hide them).
 
 If the area has a Raumlicht room, the card reads the `scenes` attribute of its

@@ -204,6 +204,7 @@ export const App : React.FunctionComponent<{
                             onEdit={(scene) => setDraft(draftFromScene(scene, sceneToTunables(scene), sceneAreaId(hass, scene)))}
                             onNew={openNewScene}
                             onShowPresets={() => setTab("presets")}
+                            onReordered={fetchSavedScenes}
                         />
                 }
             </div>

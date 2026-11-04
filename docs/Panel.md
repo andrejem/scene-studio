@@ -38,6 +38,11 @@ side panel; on phones the room chips are on top and the editor fills the screen.
 - The scene that was activated last in a room is **outlined** while lights of the room are on, or
   while it is running as dynamic scene.
 - The **pencil** opens the scene editor, **New scene** (button or the dashed tile of a room) creates one.
+- **Arrange** (admins, next to the room name): the tiles wiggle, drag them into place with the mouse or
+  a finger, then **Done**. **Same order in all rooms** sorts the scenes of every other room the same way,
+  matched by the name without the room (*Bright*, *Dimmed*, …); scenes only one room has go to the end.
+  The order is stored with the scenes: room cards show the same order, editing a scene keeps its place,
+  new scenes come last. (`scene_studio/set_scene_order`, attribute `order` of the scene entities)
 
 ## Presets tab
 

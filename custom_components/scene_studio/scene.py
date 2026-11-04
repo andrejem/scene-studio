@@ -73,6 +73,7 @@ class SavedSceneEntity(Scene):
             "preset_id": self._scene.get("preset_id"),
             "dynamic": self._scene.get("dynamic", False),
             "music": is_music_scene(self._scene),
+            **({"order": self._scene["order"]} if "order" in self._scene else {}),
         }
 
     @callback

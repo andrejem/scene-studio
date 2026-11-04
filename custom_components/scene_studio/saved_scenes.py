@@ -1,4 +1,5 @@
-# Added by andrejem (2026): persistent saved scenes (preset + targets + settings, music).
+# Added by andrejem (2026): persistent saved scenes (preset + targets + settings, music) and their
+# order on panel and room cards (order, set with Arrange in the panel).
 
 import logging
 import uuid
@@ -67,7 +68,21 @@ class SavedSceneStore:
                 self._notify(scene["id"], scene)
 
     def get_all(self) -> list[dict]:
-        return sorted(self._scenes.values(), key=lambda s: s["name"].lower())
+        """Scenes in their order (Arrange in the panel), scenes without order at the end by name."""
+        return sorted(self._scenes.values(), key=lambda s: (s.get("order", 1_000_000), s["name"].lower()))
+
+    async def async_set_order(self, scene_ids: list[str]) -> None:
+        """Position of each scene (index in the list). Unknown ids are ignored, other scenes keep theirs."""
+        changed = []
+        for index, scene_id in enumerate(scene_ids):
+            scene = self._scenes.get(scene_id)
+            if scene is not None and scene.get("order") != index:
+                scene["order"] = index
+                changed.append(scene)
+        if changed:
+            await self._async_save()
+            for scene in changed:
+                self._notify(scene["id"], scene)
 
     def get(self, scene_id: str) -> dict | None:
         return self._scenes.get(scene_id)
@@ -85,6 +100,9 @@ class SavedSceneStore:
         if data.get("music"):
             # Music scene: colors from the album cover of a media player (music_scenes.py)
             scene["music"] = dict(data["music"])
+        old = self._scenes.get(scene_id)
+        if old is not None and "order" in old:
+            scene["order"] = old["order"]  # editing a scene keeps its place
 
         self._scenes[scene_id] = scene
         await self._async_save()

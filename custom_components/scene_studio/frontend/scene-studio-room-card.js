@@ -3,6 +3,8 @@
 // (light helpers expandable to their member lights) and the Raumlicht motion switch.
 // Everything is derived from the area, so new scenes and lights show up automatically.
 // Music scenes (3.2) carry a note badge.
+// Scenes follow the order set in the panel (Arrange, attribute order); the editor offers the scenes
+// and lights of the chosen area only (3.4).
 
 (async () => {
 // The card borrows Lit from Home Assistant's own elements. This module is loaded early as
@@ -265,9 +267,12 @@ class SceneStudioRoomCard extends LitElement {
       : Object.keys(hass.states)
         .filter((e) => e.startsWith("scene.") && entityArea(hass, e) === area && isVisible(hass, e) && !hide.has(e))
         .sort((a, b) => {
+          // order set in the panel (Arrange) first, then Raumlicht scenes, then by name
+          const oa = hass.states[a]?.attributes?.order ?? 9999;
+          const ob = hass.states[b]?.attributes?.order ?? 9999;
           const ra = sceneToRl[a]?.index ?? 999;
           const rb = sceneToRl[b]?.index ?? 999;
-          return ra - rb || this._sceneLabel(a, sceneToRl, roomName).localeCompare(this._sceneLabel(b, sceneToRl, roomName), lang(hass));
+          return oa - ob || ra - rb || this._sceneLabel(a, sceneToRl, roomName).localeCompare(this._sceneLabel(b, sceneToRl, roomName), lang(hass));
         }));
     // keep one tile per Raumlicht scene (a Raumlicht scene may start several scene entities)
     const seenRl = new Set();
@@ -785,6 +790,15 @@ class SceneStudioRoomCardEditor extends LitElement {
   }
 
   _schema() {
+    // with an area chosen, the lists offer the scenes and lights of that area only
+    const area = this._config?.area;
+    const inArea = (domains) => (area
+      ? Object.keys(this.hass.states).filter((e) => domains.includes(e.split(".")[0]) && entityArea(this.hass, e) === area)
+      : undefined);
+    const pick = (domains, extra = {}) => {
+      const list = inArea(domains);
+      return { entity: { multiple: true, ...extra, ...(list ? { include_entities: list } : { filter: [{ domain: domains }] }) } };
+    };
     return [
       { name: "area", required: true, selector: { area: {} } },
       { name: "name", selector: { text: {} } },
@@ -799,15 +813,15 @@ class SceneStudioRoomCardEditor extends LitElement {
         ],
       },
       { name: "chips", selector: { entity: { multiple: true, filter: [{ domain: ["light", "switch", "fan", "input_boolean"] }] } } },
-      { name: "hide", selector: { entity: { multiple: true, filter: [{ domain: ["light", "scene"] }] } } },
+      { name: "hide", selector: pick(["light", "scene"]) },
       {
         type: "expandable",
         name: "",
         title: t(this.hass, "section_content"),
         flatten: true,
         schema: [
-          { name: "scenes", selector: { entity: { multiple: true, reorder: true, filter: [{ domain: "scene" }] } } },
-          { name: "lights", selector: { entity: { multiple: true, filter: [{ domain: "light" }] } } },
+          { name: "scenes", selector: pick(["scene"], { reorder: true }) },
+          { name: "lights", selector: pick(["light"]) },
         ],
       },
       {
