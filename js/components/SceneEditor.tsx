@@ -189,6 +189,17 @@ export const SceneEditor: React.FunctionComponent<{
         return [...fav, ...list.filter(p => !favoritePresets.includes(p.id))];
     }, [presets, search, favoritePresets]);
 
+    // a new scene is named after room and preset (hooks before the early return below)
+    useEffect(() => {
+        if (!nameAuto || !presetId) {
+            return;
+        }
+        const presetName = presetMap[presetId]?.name;
+        if (presetName) {
+            setName([areaName(hass, areaId), presetName].filter(Boolean).join(" "));
+        }
+    }, [nameAuto, presetId, areaId, presetMap]); // eslint-disable-line react-hooks/exhaustive-deps
+
     if (!open) {
         return null;
     }
@@ -201,15 +212,6 @@ export const SceneEditor: React.FunctionComponent<{
 
     const preset = presetMap[presetId];
 
-    useEffect(() => {
-        if (!nameAuto || !presetId) {
-            return;
-        }
-        const presetName = presetMap[presetId]?.name;
-        if (presetName) {
-            setName([areaName(hass, areaId), presetName].filter(Boolean).join(" "));
-        }
-    }, [nameAuto, presetId, areaId, presetMap]); // eslint-disable-line react-hooks/exhaustive-deps
     const entityId = editing ? sceneEntityId(hass, editing.id) : undefined;
     const musicOn = presetId === MUSIC_PRESET_ID;
     const canSave = !!name.trim() && !!presetId && hasTargets(targets) && !busy;
