@@ -414,3 +414,17 @@ async def test_lights_back_on_without_music_or_other_scene(hass: HomeAssistant, 
     await hass.services.async_call("light", "turn_on", {"entity_id": LIGHTS}, blocking=True)
     await hass.async_block_till_done()
     assert scene_id not in music(hass).sessions
+
+
+async def test_any_speaker_ignores_tv_sound(hass: HomeAssistant, monkeypatch, userdata):
+    """A Sonos playing TV sound (no cover) does not count for "any speaker"."""
+    fetched = await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Office music", LIGHTS, "any")
+    player(hass, PLAYER, "playing", album="Kitchen")
+    await hass.async_block_till_done()
+    hass.states.async_set(PLAYER_2, "playing", {"source": "TV", "media_title": "TV"})  # started later
+    await hass.async_block_till_done()
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.async_block_till_done()
+    assert music(hass).sessions[scene_id].media_player == PLAYER
+    assert fetched == [key("Kitchen")]

@@ -194,9 +194,14 @@ class MusicScenes:
                  if e.domain == "media_player" and e.platform == "sonos" and not e.disabled_by]
         return sorted(sonos or self.hass.states.async_entity_ids("media_player"))
 
+    def _music(self, player: str | None) -> bool:
+        """Playing with a cover: TV sound or line-in on a Sonos has none and gives no colors."""
+        state = self.hass.states.get(player) if player else None
+        return state is not None and state.state == "playing" and bool(state.attributes.get("entity_picture"))
+
     def _playing_candidate(self, exclude: str | None = None) -> str | None:
-        """The speaker that started playing most recently."""
-        playing = [self.hass.states.get(p) for p in self._candidates() if p != exclude and self._playing(p)]
+        """The speaker with a cover that started playing most recently."""
+        playing = [self.hass.states.get(p) for p in self._candidates() if p != exclude and self._music(p)]
         playing = [s for s in playing if s is not None]
         return max(playing, key=lambda s: s.last_changed).entity_id if playing else None
 
@@ -204,7 +209,7 @@ class MusicScenes:
         chosen = (scene.get(ATTR_MUSIC) or {}).get("media_player")
         if chosen == MEDIA_PLAYER_ANY:
             session = self.sessions.get(scene["id"])
-            if session is not None and session.media_player and self._playing(session.media_player):
+            if session is not None and session.media_player and self._music(session.media_player):
                 return session.media_player
             return self._playing_candidate() or (session.media_player if session else None)
         if chosen:
@@ -431,8 +436,10 @@ class MusicScenes:
             if self._is_any(scene):
                 if player not in self._candidates():
                     continue
+                if not self._music(player) and (session is None or session.media_player != player):
+                    continue  # e.g. TV sound on a Sonos: no cover, no colors
                 if session is not None and session.media_player != player:
-                    if playing and not self._playing(session.media_player):
+                    if not self._music(session.media_player):
                         # the speaker of the scene went quiet, another one plays: follow it
                         session.media_player = player
                         session.album = session.track = None

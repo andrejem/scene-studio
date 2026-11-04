@@ -15,7 +15,8 @@ A new cover means new colors. When the music stops, the lights go back to how th
   gives strong colors on the lamps (at least 80 % saturation). **Color intensity** in the scene
   editor makes them paler or even stronger ([Saved scenes](Saved%20scenes.md#color-intensity)).
 - With the speaker *Any speaker that is playing* the scene uses the music of every room: in "any"
-  mode all Sonos speakers count (without Sonos: all media players).
+  mode all Sonos speakers count (without Sonos: all media players), but only while they play music
+  with a cover – TV sound or line-in on a Sonos is ignored.
 - **No music, no change.** As long as no cover is known, the lights stay as they are.
 - When the music stops (or moves on to another room), the lights return to their state before the
   music scene after 30 seconds. If they were off, they turn off.
