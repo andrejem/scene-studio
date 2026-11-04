@@ -1,0 +1,26 @@
+name: Clean up old releases
+
+# Keeps the newest releases only. The tags stay, so every version can still be checked out.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Keep the 7 newest releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEEP: "7"
+        run: |
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --exclude-drafts --json tagName,createdAt \
+            --jq "sort_by(.createdAt) | reverse | .[${KEEP}:][] | .tagName" |
+          while read -r tag; do
+            echo "Deleting release $tag (the tag is kept)"
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes
+          done
