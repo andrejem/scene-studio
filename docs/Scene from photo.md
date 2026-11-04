@@ -1,7 +1,7 @@
 # Own presets – from colors or a photo
 
 Create your own presets in the panel – from colors you pick or from a photo, no JSON, no restart –
-and adjust the built-in presets. Admin users only.
+and adjust or hide the built-in presets. Admin users only.
 
 ## New preset
 
@@ -39,17 +39,21 @@ picked in the browser.
 
 ## Edit or delete own presets
 
-Every preset has a **pencil** on its tile. For own presets: change name, category, brightness,
+Every preset has a **pencil** on its tile (with a mouse it shows when you point at the tile, like the
+favorite star). For own presets: change name, category, brightness,
 colors or the picture (**Other photo**, then **Take colors from the photo** if the colors should
 follow it; or switch to **From colors**). **Delete** removes the preset and its picture. A preset
 that is used by a saved scene cannot be deleted – the message names the scenes.
 
 ## Change built-in presets
 
-The **pencil** on a built-in preset changes its picture, its colors and its default brightness:
-**Other photo** replaces only the picture, **Take colors from the photo** also takes its colors, or
-change single colors by hand. **Restore original** brings back the original picture, colors and
-brightness. There are no copies: the preset keeps its name and ID.
+The **pencil** on a built-in preset changes its colors and its default brightness; its picture stays.
+**Restore original** brings back the original colors and brightness. There are no copies: the preset
+keeps its name and ID.
+
+**Hide** takes a built-in preset out of the lists (presets tab and preset picker). Saved scenes that
+use it keep working. Hidden presets are listed at the end of the presets tab under **Hidden presets**;
+the eye on a tile shows it again.
 
 Saved scenes and dashboards that use the preset show the change right away.
 
@@ -59,7 +63,7 @@ Everything lives in `custom_components/scene_studio/userdata/custom/` (kept by H
 
 - `presets.json` - the same file as for [hand-written custom presets](Custom%20Presets.md).
   Presets from the panel are normal entries; changes of built-in presets are stored under
-  `overrides` (`{preset_id: {img, lights, bri}}`); presets made from colors carry `"generated": true`. Hand-written entries and unknown keys are kept.
+  `overrides` (`{preset_id: {img, lights, bri, hidden}}`); presets made from colors carry `"generated": true`. Hand-written entries and unknown keys are kept.
   Before the panel changes the file for the first time, a copy is saved as `presets.json.orig`.
   A file that cannot be read is never overwritten.
 - `assets/user/` - the pictures (unique file names, removed again when a preset is deleted or its
@@ -78,4 +82,5 @@ pictures of the built-in presets are public files.
 | `scene_studio/save_custom_preset` | `name`, `bri` (1-255), `lights` (`[{x, y}]`, 1-10), optional `preset_id` (edit), `image` (base64 or data URL, JPEG/PNG/WebP, max 4 MB), `generated` (picture made from the colors), `category_id` or `new_category`, `default_category_name` |
 | `scene_studio/delete_custom_preset` | `preset_id` |
 | `scene_studio/set_preset_image` | `preset_id` of a built-in preset, `image`, `lights` and/or `bri` (default brightness 1-255) |
-| `scene_studio/reset_preset` | `preset_id` - restores the original |
+| `scene_studio/reset_preset` | `preset_id` - restores the original (a hidden preset stays hidden) |
+| `scene_studio/set_preset_hidden` | `preset_id` of a built-in preset, `hidden` (true / false) |

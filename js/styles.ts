@@ -266,6 +266,14 @@ button { font: inherit; color: inherit; }
     z-index: 1;
     filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
 }
+/* with a mouse, pencil and star only show on hover (a favorite keeps its star); touch screens always show them */
+@media (hover: hover) {
+    .tile .tile-top-icon-container { opacity: 0; transition: opacity 0.15s; }
+    .tile:hover .tile-top-icon-container,
+    .tile:focus-within .tile-top-icon-container,
+    .tile .tile-top-icon-container.keep { opacity: 1; }
+}
+.tile.muted .tile-bg-img { filter: grayscale(0.7) brightness(0.7); }
 .tile-badge {
     position: absolute;
     top: 8px;

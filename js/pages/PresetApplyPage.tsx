@@ -3,7 +3,8 @@
 // short summary, once / dynamic, brightness in percent, further options folded away, search and
 // category chips. Saved scenes and the scene editor moved to their own components; the former
 // "last action" dialog was replaced by the scene entity id in the scene editor. Every preset has a
-// pencil to change it (built-in ones can be restored); new presets come from colors or a photo.
+// pencil to change it (built-in ones can be restored or hidden, hidden ones are listed at the end to show
+// them again); new presets come from colors or a photo.
 
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {PresetTile} from "../components/PresetTile";
@@ -75,6 +76,13 @@ export const PresetApplyPage: React.FunctionComponent<{
 
     const [photoDialogOpen, setPhotoDialogOpen] = useState<boolean>(false);
     const [photoPresetId, setPhotoPresetId] = useState<string | null>(null);
+    const [showHidden, setShowHidden] = useState<boolean>(false);
+    const hiddenPresets = useMemo(() => presets.filter(p => p.user_hidden), [presets]);
+    const unhide = (id: string) => {
+        hass.callWS({type: "scene_studio/set_preset_hidden", preset_id: id, hidden: false})
+            .then(() => onPresetsChanged?.())
+            .catch(() => undefined);
+    };
     const isAdmin = !!hass?.user?.is_admin;
     const targetLights = useTargetLights(hass, targets);
 
@@ -117,7 +125,7 @@ export const PresetApplyPage: React.FunctionComponent<{
         if (q) {
             return [{key: "search", name: "", presets: visible.filter(p => p.name.toLowerCase().includes(q))}];
         }
-        const favorites = presets.filter(p => favoritePresets.includes(p.id));
+        const favorites = visible.filter(p => favoritePresets.includes(p.id));
         const all = [
             ...(favorites.length > 0 ? [{key: "favorites", name: t("favorites"), presets: favorites}] : []),
             ...categories.map(c => ({key: c.id, name: c.name, presets: visible.filter(p => p.categoryId === c.id)}))
@@ -267,6 +275,35 @@ export const PresetApplyPage: React.FunctionComponent<{
                     {s.presets.length === 0 && <div className={"sp-secondary"}>{t("no_results")}</div>}
                 </section>
             ))}
+
+            {
+                isAdmin && !search.trim() && hiddenPresets.length > 0 &&
+                <section className={"sp-group sp-hidden-presets"}>
+                    <button className={"sp-btn text show-hidden-presets"} onClick={() => setShowHidden(!showHidden)}>
+                        <HaIcon icon={showHidden ? "mdi:chevron-up" : "mdi:eye-off-outline"} size={18}/>
+                        {t("hidden_presets", {n: hiddenPresets.length})}
+                    </button>
+                    {
+                        showHidden &&
+                        <div className={"sp-grid small"}>
+                            {hiddenPresets.map(p => (
+                                <PresetTile
+                                    key={"hidden_" + p.id}
+                                    id={p.id}
+                                    name={p.name}
+                                    small
+                                    muted
+                                    imgSrc={presetImage(p)}
+                                    onClick={(id) => handlePresetTap(id)}
+                                    actionIcon={"mdi:eye-outline"}
+                                    actionLabel={t("show_again")}
+                                    onActionClick={(id) => unhide(id)}
+                                />
+                            ))}
+                        </div>
+                    }
+                </section>
+            }
 
             {
                 applied && appliedPreset &&

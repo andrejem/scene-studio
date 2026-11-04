@@ -2,7 +2,8 @@
 # scene_studio/resolve_targets (lights of a scene, for brightness per light) commands,
 # commands for presets created in the panel and replaced preset images (admin only),
 # import from Scene Presets, active music scenes (get_music_scenes), gradient lamps in resolve_targets;
-# default brightness of built-in presets (set_preset_image bri), presets made from colors (generated)
+# default brightness of built-in presets (set_preset_image bri), presets made from colors (generated),
+# hiding built-in presets (set_preset_hidden)
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -11,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from .optional_lights import split_optional
 from .util import ensure_list, filter_targets, resolve_targets
 from .migrate import async_import_status, async_import_scene_presets
-from .custom_presets import CustomPresetError, save_preset, delete_preset, set_override, reset_override
+from .custom_presets import CustomPresetError, save_preset, delete_preset, set_hidden, set_override, reset_override
 from .file_utils import async_reload_preset_data
 from .data import find_data
 
@@ -178,6 +179,22 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             connection.send_result(msg["id"], {})
 
     websocket_api.async_register_command(_hass, ws_set_preset_image)
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): "scene_studio/set_preset_hidden",
+            vol.Required("preset_id"): cv.string,
+            vol.Required("hidden"): cv.boolean,
+        }
+    )
+    @websocket_api.require_admin
+    @websocket_api.async_response
+    async def ws_set_preset_hidden(hass, connection, msg) -> None:
+        _, ok = await _run(hass, connection, msg, set_hidden, msg["preset_id"], msg["hidden"])
+        if ok:
+            connection.send_result(msg["id"], {})
+
+    websocket_api.async_register_command(_hass, ws_set_preset_hidden)
 
     @websocket_api.websocket_command(
         {

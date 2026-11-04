@@ -43,7 +43,7 @@ each room on your dashboard with the room card.
 | **Lights of a scene** | Brightness per light, lights that only join when they are on, lights the scene does not control, light groups as one light. Gradient lamps (e.g. Hue Signe in Zigbee2MQTT) show all colors of the preset. [Lights of a scene](https://github.com/andrejem/scene-studio/blob/main/docs/Lights%20of%20a%20scene.md) |
 | **Lamp modes** | Give one lamp another scene of the room while the rest keeps going. [Lamp modes](https://github.com/andrejem/scene-studio/blob/main/docs/Lamp%20modes.md) |
 | **Music scenes** | The lights take the colors of the album cover that is playing and change with every new cover. They can start by themselves when music starts or follows you into another room, and return to their state before when the music stops. [Music scenes](https://github.com/andrejem/scene-studio/blob/main/docs/Music%20scenes.md) |
-| **Own presets** | Pick colors (color or white tones, like the Hue app) or let a photo give them – no JSON, no restart. Built-in presets can get another picture, other colors or another default brightness. [Own presets](https://github.com/andrejem/scene-studio/blob/main/docs/Scene%20from%20photo.md) |
+| **Own presets** | Pick colors (color or white tones, like the Hue app) or let a photo give them – no JSON, no restart. Built-in presets can get other colors or another default brightness, or be hidden. [Own presets](https://github.com/andrejem/scene-studio/blob/main/docs/Scene%20from%20photo.md) |
 | **Room card** | One card per room: brightness slider, scene tiles with pictures, light rows. Built from the area automatically, visual editor. [Room card](https://github.com/andrejem/scene-studio/blob/main/docs/Room%20card.md) |
 
 ## Installation

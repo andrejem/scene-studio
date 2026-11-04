@@ -1,6 +1,6 @@
 # Added by andrejem (2026): presets created in the panel (from a photo or from colors, "generated"
-# picture) and replaced images, colors or default brightness of existing presets (blocking file access,
-# called in the executor; the caller reloads the presets).
+# picture) and replaced images, colors or default brightness of existing presets, hidden built-in presets
+# (blocking file access, called in the executor; the caller reloads the presets).
 # Everything is stored in userdata/custom/presets.json, the same file that
 # hand-written custom presets use: unknown keys and existing entries are kept as they are.
 
@@ -220,11 +220,32 @@ def set_override(preset_id, image, lights, bri=None):
 
 
 def reset_override(preset_id):
+    """Original picture, colors and brightness again; a hidden preset stays hidden."""
     data = _read()
     override = (data.get("overrides") or {}).pop(preset_id, None)
     if override is None:
         return
+    if override.get("hidden"):
+        data["overrides"][preset_id] = {"hidden": True}
     if not data["overrides"]:
         del data["overrides"]
     _write(data)
     _remove_image(override.get("img"))
+
+
+def set_hidden(preset_id, hidden):
+    """Hide a built-in preset in the panel (it keeps working in saved scenes and services) or show it again."""
+    if _builtin(preset_id) is None:
+        raise CustomPresetError("Only built-in presets can be hidden")
+    data = _read()
+    overrides = data.setdefault("overrides", {})
+    override = overrides.setdefault(preset_id, {})
+    if hidden:
+        override["hidden"] = True
+    else:
+        override.pop("hidden", None)
+        if not override:
+            overrides.pop(preset_id)
+    if not overrides:
+        data.pop("overrides")
+    _write(data)

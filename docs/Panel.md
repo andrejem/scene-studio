@@ -56,7 +56,9 @@ side panel; on phones the room chips are on top and the editor fills the screen.
 - **Save as scene** – opens the scene editor with the last tapped preset and these settings.
 - **New preset** (admins) – from colors or a photo; the **pencil** on a tile changes a preset – see
   [Own presets](Scene%20from%20photo.md).
-- **Search**, category chips and **favorites** (star on a tile) help to find presets.
+- **Search**, category chips and **favorites** (star on a tile) help to find presets. With a mouse,
+  star and pencil show when you point at a tile.
+- **Hidden presets** (admins, at the end) – built-in presets you hid; the eye shows them again.
 - Tap a preset to apply it to the chosen lights. The preset is shown on top of the card with
   *applied*, its tile is outlined and a short message confirms it at the bottom of the screen.
 

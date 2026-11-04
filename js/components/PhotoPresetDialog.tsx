@@ -1,6 +1,6 @@
 // Added by andrejem (2026): presets of the user - create a preset from a photo or from chosen colors
-// (the picture is then the gradient of the colors), edit and delete own presets, change the picture,
-// colors and default brightness of built-in presets (the original can be restored).
+// (the picture is then the gradient of the colors), edit and delete own presets, change the colors and
+// default brightness of built-in presets (the original can be restored; their picture stays) or hide them.
 // Colors are picked in two tabs like the Hue app (color / white tones, ColorEditor).
 // Pictures of own presets are shown through their signed URL.
 
@@ -226,7 +226,6 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
         const bri = Math.max(1, Math.min(255, Math.round(brightness * 2.55)));
         if (isBuiltin) {
             const msg: any = {type: "scene_studio/set_preset_image", preset_id: preset!.id};
-            if (image) msg.image = image;
             if (colorsChanged) msg.lights = lights;
             if (briChanged) msg.bri = bri;
             await hass.callWS(msg);
@@ -262,6 +261,8 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
         run(() => hass.callWS({type: "scene_studio/delete_custom_preset", preset_id: preset.id}));
     };
 
+    const hide = () => run(() => hass.callWS({type: "scene_studio/set_preset_hidden", preset_id: preset!.id, hidden: true}));
+
     const reset = () => {
         if (!preset || !window.confirm(t("preset_reset_confirm", {name: preset.name}))) {
             return;
@@ -273,7 +274,7 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
     const gradientPreview = colors.length > 0 ?
         `linear-gradient(120deg, ${(colors.length === 1 ? [colors[0], colors[0]] : colors).map(c => rgbToHex(xyToRgb(c))).join(", ")})` : undefined;
     const canSave = !busy && colors.length > 0 && (isBuiltin
-        ? (!!image || colorsChanged || briChanged)
+        ? (colorsChanged || briChanged)
         : (!!name.trim() && (!!image || !!preset || source === "colors") && (categoryId !== NEW_CATEGORY || !!newCategory.trim())));
 
     const sourceTab = (value: Source, label: string, icon: string) => (
@@ -319,6 +320,8 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
                     </div>
                 }
 
+                {
+                    !isBuiltin &&
                 <div style={{display: "flex", gap: "1rem", alignItems: "center", marginTop: "1rem", flexWrap: "wrap"}}>
                     <div
                         className={"preset-picture"}
@@ -357,6 +360,7 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
                         onChange={(e) => onFile(e.target.files?.[0])}
                     />
                 </div>
+                }
 
                 <div style={LABEL}>{t("palette_heading")}</div>
                 <div style={{display: "flex", flexWrap: "wrap", gap: "0.6rem", alignItems: "center"}}>
@@ -506,6 +510,12 @@ export const PhotoPresetDialog: React.FunctionComponent<Props> = ({
                         preset && !isBuiltin &&
                         <button className={"photo-delete"} style={{...BUTTON, color: "var(--error-color, #db4437)", marginRight: "auto"}} onClick={remove}>
                             {t("delete")}
+                        </button>
+                    }
+                    {
+                        isBuiltin &&
+                        <button className={"preset-hide"} style={{...BUTTON, marginRight: preset?.overridden ? undefined : "auto"}} onClick={hide}>
+                            {t("hide_preset")}
                         </button>
                     }
                     {
