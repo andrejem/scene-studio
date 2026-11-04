@@ -308,3 +308,61 @@ async def test_new_track_same_cover_moves_colors(hass: HomeAssistant, monkeypatc
     await wait(hass, 6)
     assert fetched == [key("Album 1")]  # same cover, nothing to read
     assert calls == [ms.TRACK_TRANSITION]
+
+
+async def test_any_speaker_follows_the_music(hass: HomeAssistant, monkeypatch, userdata):
+    """Speaker "any": the scene takes the cover of whichever speaker plays, also another room's."""
+    fetched = await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Office music", LIGHTS, "any")
+    player(hass, PLAYER_2, "playing", album="Kitchen")
+    await hass.async_block_till_done()
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.async_block_till_done()
+    assert music(hass).sessions[scene_id].media_player == PLAYER_2
+    assert fetched == [key("Kitchen", PLAYER_2)] and all(on(hass, l) for l in LIGHTS)
+
+    # the kitchen stops, the living room plays: the scene follows instead of ending
+    player(hass, PLAYER_2, "paused", album="Kitchen")
+    player(hass, PLAYER, "playing", album="Living")
+    await wait(hass, 6)
+    assert music(hass).sessions[scene_id].media_player == PLAYER
+    assert key("Living") in fetched
+
+    # all music off: after the delay the scene ends and the lights go back to off
+    player(hass, PLAYER, "paused", album="Living")
+    await wait(hass, 31)
+    assert scene_id not in music(hass).sessions
+    assert not any(on(hass, l) for l in LIGHTS)
+
+
+async def test_saturation_of_a_scene(hass: HomeAssistant, monkeypatch, userdata):
+    """Color intensity: more vivid or paler colors of the preset, hue unchanged, whites untouched."""
+    import colorsys
+
+    from homeassistant.util import color as color_util
+
+    from custom_components.scene_studio.color_management import adjust_saturation
+
+    def sat(xy):
+        r, g, b = color_util.color_xy_to_RGB(*xy)
+        return colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+
+    pale = color_util.color_RGB_to_xy(200, 150, 230)
+    white = color_util.color_RGB_to_xy(255, 245, 240)
+    vivid, white_after = adjust_saturation([pale, white], 100)
+    assert sat(vivid)[1] > 0.95 and abs(sat(vivid)[0] - sat(pale)[0]) < 0.03
+    assert white_after == white
+    paler = adjust_saturation([pale], -50)[0]
+    assert sat(paler)[1] < sat(pale)[1] * 0.6
+    assert adjust_saturation([pale], 0) == [pale] and adjust_saturation([pale], None) == [pale]
+
+    # a saved scene passes it on to the lights
+    fake_lights(hass, ["light.x"])
+    await setup(hass, monkeypatch)
+    r = await hass.services.async_call("scene_studio", "save_scene", {
+        "name": "Vivid", "preset_id": PRESET, "targets": {"entity_id": ["light.x"]}, "saturation": 100,
+    }, blocking=True, return_response=True)
+    assert r["scene"]["saturation"] == 100
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
+    await hass.async_block_till_done()
+    assert sat(hass.states.get("light.x").attributes["xy_color"])[1] > 0.9

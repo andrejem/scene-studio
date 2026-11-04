@@ -76,7 +76,7 @@ class OptionalLights:
 
     def register(
         self, optional_ids, base_lights, preset_id, brightness, dynamic_scene_id=None,
-        light_brightness=None,
+        light_brightness=None, saturation=None,
     ):
         for entity_id in optional_ids:
             self._registrations[entity_id] = {
@@ -85,6 +85,7 @@ class OptionalLights:
                 "brightness": brightness,
                 "dynamic_scene_id": dynamic_scene_id,
                 "light_brightness": light_brightness,
+                "saturation": saturation,
             }
         self._resubscribe()
 
@@ -137,6 +138,7 @@ class OptionalLights:
             True,
             registration["brightness"],
             light_brightness=registration.get("light_brightness"),
+            saturation=registration.get("saturation"),
         )
         if dynamic_scene is not None:
             dynamic_scene.add_light(entity_id)

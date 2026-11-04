@@ -86,6 +86,7 @@ class DynamicScene:
                 self.parameters.get(ATTR_BRIGHTNESS, None),
                 light_brightness=self.parameters.get(ATTR_LIGHT_BRIGHTNESS),
                 gradient=self.parameters.get(ATTR_GRADIENT, True),
+                saturation=self.parameters.get(ATTR_SATURATION),
             )
             run_count += 1
 
@@ -105,6 +106,7 @@ class DynamicScene:
             self.parameters.get(ATTR_BRIGHTNESS, None),
                 light_brightness=self.parameters.get(ATTR_LIGHT_BRIGHTNESS),
                 gradient=self.parameters.get(ATTR_GRADIENT, True),
+                saturation=self.parameters.get(ATTR_SATURATION),
         )
 
         # Afterwards, every light runs on its own schedule
@@ -151,6 +153,7 @@ class DynamicScene:
                 self.parameters.get(ATTR_BRIGHTNESS, None),
                 light_brightness=self.parameters.get(ATTR_LIGHT_BRIGHTNESS),
                 gradient=self.parameters.get(ATTR_GRADIENT, True),
+                saturation=self.parameters.get(ATTR_SATURATION),
             )
 
     def _start_light_loop(self, entity_id):

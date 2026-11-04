@@ -50,6 +50,10 @@ SERVICE_IMPORT_SCENE_PRESETS = "import_scene_presets"
 
 # Added by andrejem (2026): built-in preset "Music" - colors from the album cover of a speaker
 MUSIC_PRESET_ID = "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42"
+# music scene speaker: whichever speaker is playing (instead of one entity id)
+MEDIA_PLAYER_ANY = "any"
 
 # Added by andrejem (2026): gradient lamps show all preset colors (false = one color like any lamp)
 ATTR_GRADIENT = "gradient"
+# color intensity of a scene: -100 (pale, towards white) .. 0 (as the preset) .. 100 (vivid)
+ATTR_SATURATION = "saturation"

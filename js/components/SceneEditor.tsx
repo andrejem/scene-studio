@@ -12,10 +12,10 @@ import HaIcon from "./hass/building_blocks/HaIcon";
 import {HaTargetSelectorValue} from "./hass/selectors/HaTargetSelector";
 import {Translate} from "../i18n";
 import {Preset} from "../types";
-import {BrightnessField, Collapsible, MoreOptions, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
+import {BrightnessField, Collapsible, MoreOptions, SaturationField, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
 import {PresetTile} from "./PresetTile";
 import {
-    DEFAULT_TUNABLES, MUSIC_PRESET_ID, MusicSettings, SavedScene, SetTunable, Tunables, areaName, hasTargets, newId, presetImage,
+    DEFAULT_TUNABLES, MEDIA_PLAYER_ANY, MUSIC_PRESET_ID, MusicSettings, SavedScene, SetTunable, Tunables, areaName, hasTargets, newId, presetImage,
     sceneEntityId, tunablesToCall
 } from "../tunables";
 
@@ -459,6 +459,7 @@ export const SceneEditor: React.FunctionComponent<{
                                             onChange={(e) => setMusic({...music, media_player: e.target.value})}
                                         >
                                             <option value={""}>{t("music_player_auto")}</option>
+                                            <option value={MEDIA_PLAYER_ANY}>{t("music_player_any")}</option>
                                             {speakers.map(sp => (
                                                 <option key={"mp_" + sp.entity_id} value={sp.entity_id}>{sp.name}</option>
                                             ))}
@@ -510,6 +511,8 @@ export const SceneEditor: React.FunctionComponent<{
                                 )}
                                 onChange={(enabled, value) => setTun(prev => ({...prev, customBrightness: enabled, customBrightnessValue: value}))}
                             />
+
+                            <SaturationField t={t} value={tun.saturation} onChange={(v) => set("saturation", v)}/>
 
                             <Collapsible
                                 label={t("more_options")}

@@ -29,6 +29,7 @@ Applies a preset once.
 | `optional` | | Lights that take part only if they are on |
 | `light_brightness` | | Brightness in percent per light, e.g. `{light.strip: 20}`; 0 = off at the start |
 | `gradient` | | Default `true`: gradient lamps in Zigbee2MQTT show all colors of the preset ([details](Lights%20of%20a%20scene.md#gradient-lamps)); `false` = one color |
+| `saturation` | | Color intensity −100 … 100, default 0: more vivid (+) or paler (−) colors, the hue stays ([details](Saved%20scenes.md#color-intensity)) |
 
 ### `start_dynamic_scene`
 
@@ -41,7 +42,7 @@ Starts a loop that applies the preset with smart shuffled colors again and again
 | `transition` | | Transition of a color change in seconds |
 | `interval_min`, `interval_max` | | Per-light timing: every light waits a random time in this range ([details](Per-light%20timing.md)) |
 | `transition_min`, `transition_max` | | Per-light timing: random transition in this range |
-| `exclude`, `keep_groups`, `optional`, `light_brightness`, `gradient` | | as for `apply_preset` |
+| `exclude`, `keep_groups`, `optional`, `light_brightness`, `gradient`, `saturation` | | as for `apply_preset` |
 
 ### `stop_dynamic_scene`, `stop_dynamic_scenes_for_targets`, `stop_all_dynamic_scenes`
 
@@ -68,7 +69,7 @@ Returns the stored scene, including its `id`.
 | `targets` | yes | Lights of the scene |
 | `id` | | ID of an existing scene to overwrite (the entity keeps its ID) |
 | `dynamic` | | Start a dynamic scene instead of applying the preset once |
-| `music` | | Only for the preset Music: `media_player` (default: speaker of the scene's room), `auto_start` (`never`, `follow`, `always`), `when_on` (start by itself also when a light is on) – see [music scenes](Music%20scenes.md) |
+| `music` | | Only for the preset Music: `media_player` (default: speaker of the scene's room; `any`: whichever speaker is playing), `auto_start` (`never`, `follow`, `always`), `when_on` (start by itself also when a light is on) – see [music scenes](Music%20scenes.md) |
 | all fields of `apply_preset` / `start_dynamic_scene` | | stored with the scene |
 
 ### `activate_saved_scene`

@@ -176,6 +176,46 @@ export const BrightnessField: React.FunctionComponent<{
     );
 };
 
+/** Color intensity: -100 paler (towards white) .. 0 as in the preset .. 100 vivid. */
+export const SaturationField: React.FunctionComponent<{
+    t: Translate,
+    value: number,
+    onChange: (value: number) => void
+}> = ({t, value, onChange}) => {
+    const v = Math.round(value || 0);
+    return (
+        <div className={"sp-field sp-saturation"}>
+            <div className={"sp-field-head"}>
+                <span>{t("color_intensity")}</span>
+                <span className={"sp-secondary"}>
+                    {
+                        v !== 0 ?
+                            <>
+                                <span className={"sp-strong sp-text"}>{v > 0 ? "+" : ""}{v} %</span>
+                                <button className={"sp-link saturation-reset"} onClick={() => onChange(0)}>{t("back_to_preset")}</button>
+                            </> :
+                            <span>{t("as_preset")}</span>
+                    }
+                </span>
+            </div>
+            <input
+                type={"range"}
+                className={"sp-range" + (v !== 0 ? "" : " off")}
+                min={-100}
+                max={100}
+                step={5}
+                value={v}
+                aria-label={t("color_intensity")}
+                onChange={(e) => onChange(Number(e.target.value))}
+                style={{background: "linear-gradient(90deg, #ddd, #c9a 50%, #f06)"}}
+            />
+            <div className={"sp-secondary sp-small"} style={{display: "flex", justifyContent: "space-between"}}>
+                <span>{t("saturation_pale")}</span><span>{t("saturation_vivid")}</span>
+            </div>
+        </div>
+    );
+};
+
 /** Shuffle / transition (once) or interval / transition (dynamic). */
 export const MoreOptions: React.FunctionComponent<{
     t: Translate,

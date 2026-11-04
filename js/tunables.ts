@@ -10,6 +10,8 @@ export const DEFAULT_TUNABLES = {
     customBrightnessValue: 128,
     customTransition: false,
     customTransitionValue: 60,
+    // color intensity (3.5): -100 paler .. 0 as the preset .. 100 vivid
+    saturation: 0,
 
     dynamic: false,
     dynamicTransitionValue: 45,
@@ -38,7 +40,10 @@ export type SavedScene = {
 /** Built-in preset "Music": the colors come from the album cover of a speaker (added in 3.2). */
 export const MUSIC_PRESET_ID = "b1c7e3d2-2f4a-4c39-9d7e-6a1f0c5e8b42";
 
-/** Settings of a music scene; without media_player the speaker of the scene's room is used. */
+/** Settings of a music scene; without media_player the speaker of the scene's room is used,
+ * "any" follows whichever speaker is playing (3.5). */
+export const MEDIA_PLAYER_ANY = "any";
+
 export type MusicSettings = {
     media_player?: string,
     auto_start?: "never" | "follow" | "always",
@@ -62,6 +67,7 @@ export function tunablesToCall(presetId: string, targets: HaTargetSelectorValue,
         preset_id: presetId,
         targets: targets,
         brightness: tun.customBrightness ? tun.customBrightnessValue : undefined,
+        saturation: tun.saturation ? Math.round(tun.saturation) : undefined,
     };
     let service: string;
 
@@ -105,6 +111,7 @@ export function sceneToTunables(scene: SavedScene): Tunables {
     if (has("brightness")) {
         tun.customBrightnessValue = scene.brightness;
     }
+    tun.saturation = has("saturation") ? Number(scene.saturation) : 0;
     tun.dynamic = !!scene.dynamic;
     if (scene.dynamic) {
         tun.dynamicPerLight = ["interval_min", "interval_max", "transition_min", "transition_max"].some(has);

@@ -49,6 +49,9 @@ side panel; on phones the room chips are on top and the editor fills the screen.
 - **Apply to** – the lights the presets are applied to: areas, devices, lights, floors or labels.
   The line shows a short summary; tap it to change the lights.
 - **Once / Dynamic** – apply the colors once, or start a dynamic scene that keeps changing them.
+- **Color intensity** – below the brightness: to the left paler, to the right more vivid, in the
+  middle *as in preset*. Works on every tap and is taken over by **Save as scene**
+  ([details](Saved%20scenes.md#color-intensity)).
 - **Brightness** – shows the brightness of the last tapped preset (*as in preset*). Moving the
   slider overrides it (percent); **back to preset** undoes that.
   While you drag, the lights that are on follow the slider (colors stay, lights that are off stay
@@ -82,7 +85,7 @@ The editor works on its own copy of the scene; the *Presets* tab is not changed 
 | **Preset** | **Change** opens the preset picker (search, favorites first). The preset **Music** makes it a [music scene](Music%20scenes.md) |
 | **Music** | Only with the preset Music: speaker, *Start by itself when music starts*, *Also when a light is already on* |
 | **Apply to** | The lights of the scene |
-| **Once / Dynamic**, **Brightness**, **More options** | As in the presets tab |
+| **Once / Dynamic**, **Brightness**, **Color intensity**, **More options** | As in the presets tab |
 | **Lights of this scene** | Brightness per light, *Only if on*, *Don't control*, groups as one light – see [Lights of a scene](Lights%20of%20a%20scene.md) |
 | **All colors on gradient lamps** | Only when the scene has a gradient lamp: off = one color on these lamps too ([gradient lamps](Lights%20of%20a%20scene.md#gradient-lamps)) |
 | **Use in automations** | Entity ID of the scene with a **Copy** button |

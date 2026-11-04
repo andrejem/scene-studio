@@ -33,6 +33,7 @@ from .const import (
     ATTR_TARGETS,
     ATTR_TRANSITION,
     DOMAIN,
+    MEDIA_PLAYER_ANY,
     MUSIC_PRESET_ID,
     SERVICE_APPLY_PRESET,
     SERVICE_START_DYNAMIC_SCENE,
@@ -178,8 +179,29 @@ class MusicScenes:
     def _music_scenes(self) -> list[dict]:
         return [s for s in self.store.get_all() if is_music_scene(s)]
 
+    @staticmethod
+    def _is_any(scene: dict) -> bool:
+        return (scene.get(ATTR_MUSIC) or {}).get("media_player") == MEDIA_PLAYER_ANY
+
+    def _candidates(self) -> list[str]:
+        """Speakers an "any speaker" scene listens to: all Sonos, without Sonos all media players."""
+        sonos = [e.entity_id for e in er.async_get(self.hass).entities.values()
+                 if e.domain == "media_player" and e.platform == "sonos" and not e.disabled_by]
+        return sorted(sonos or self.hass.states.async_entity_ids("media_player"))
+
+    def _playing_candidate(self, exclude: str | None = None) -> str | None:
+        """The speaker that started playing most recently."""
+        playing = [self.hass.states.get(p) for p in self._candidates() if p != exclude and self._playing(p)]
+        playing = [s for s in playing if s is not None]
+        return max(playing, key=lambda s: s.last_changed).entity_id if playing else None
+
     def _player_of(self, scene: dict) -> str | None:
         chosen = (scene.get(ATTR_MUSIC) or {}).get("media_player")
+        if chosen == MEDIA_PLAYER_ANY:
+            session = self.sessions.get(scene["id"])
+            if session is not None and session.media_player and self._playing(session.media_player):
+                return session.media_player
+            return self._playing_candidate() or (session.media_player if session else None)
         if chosen:
             return chosen
         return self.player_in_area(self._scene_area(scene))
@@ -320,7 +342,11 @@ class MusicScenes:
         if self._unsub_players is not None:
             self._unsub_players()
             self._unsub_players = None
-        players = sorted({p for p in (self._player_of(s) for s in self._music_scenes()) if p})
+        scenes = self._music_scenes()
+        players = {p for p in (self._player_of(s) for s in scenes) if p}
+        if any(self._is_any(s) for s in scenes):
+            players.update(self._candidates())
+        players = sorted(players)
         if players:
             self._unsub_players = async_track_state_change_event(self.hass, players, self._on_player)
 
@@ -350,9 +376,21 @@ class MusicScenes:
         playing = new is not None and new.state == "playing"
 
         for scene in self._music_scenes():
-            if self._player_of(scene) != player:
-                continue
             session = self.sessions.get(scene["id"])
+            if self._is_any(scene):
+                if player not in self._candidates():
+                    continue
+                if session is not None and session.media_player != player:
+                    if playing and not self._playing(session.media_player):
+                        # the speaker of the scene went quiet, another one plays: follow it
+                        session.media_player = player
+                        session.album = session.track = None
+                    else:
+                        continue
+                elif session is None and not playing:
+                    continue
+            elif self._player_of(scene) != player:
+                continue
             if session is not None:
                 if playing:
                     if session.stop_timer is not None:
@@ -552,6 +590,7 @@ class MusicScenes:
                 scene.get("brightness"),
                 light_brightness={k: v for k, v in (settings or {}).items() if v > 0} or None,
                 gradient=scene.get("gradient", True),
+                saturation=scene.get("saturation"),
             )
         finally:
             _INTERNAL.reset(token)
@@ -564,6 +603,15 @@ class MusicScenes:
         session.stop_timer = None
         if self._playing(session.media_player):
             return
+        scene = self.store.get(scene_id)
+        if scene is not None and self._is_any(scene):
+            other = self._playing_candidate(exclude=session.media_player)
+            if other is not None:
+                # music still plays elsewhere: take its cover instead of ending
+                session.media_player = other
+                session.album = session.track = None
+                self._schedule_cover(scene)
+                return
         self.hass.async_create_task(self.async_end(scene_id, restore=True))
 
     async def async_end(self, scene_id: str, restore: bool = True):

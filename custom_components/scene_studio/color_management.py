@@ -1,3 +1,4 @@
+import colorsys
 import math
 import copy
 import random
@@ -73,3 +74,30 @@ def get_randomized_colors(options: List[Tuple[float, float]], total: int) -> Lis
     colors = colors[:total]
 
     return colors
+
+def adjust_saturation(colors: List[Tuple[float, float]], amount) -> List[Tuple[float, float]]:
+    """Make the colors of a preset more vivid (amount > 0) or paler (amount < 0), hue unchanged.
+
+    amount is -100..100 (percent). 100 gives fully saturated colors, -100 white. Near-white colors
+    (white tones of a preset) are not made more colorful, their hue is not meaningful.
+    """
+    if not amount:
+        return colors
+    from homeassistant.util import color as color_util
+
+    k = max(-100.0, min(100.0, float(amount))) / 100
+    adjusted = []
+    for x, y in colors:
+        r, g, b = color_util.color_xy_to_RGB(x, y)
+        hue, sat, _val = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+        if k > 0:
+            if sat < 0.15:
+                adjusted.append((x, y))
+                continue
+            sat = sat + (1 - sat) * k
+        else:
+            sat = sat * (1 + k)
+        r, g, b = colorsys.hsv_to_rgb(hue, sat, 1.0)
+        nx, ny = color_util.color_RGB_to_xy(round(r * 255), round(g * 255), round(b * 255))
+        adjusted.append((round(nx, 4), round(ny, 4)))
+    return adjusted

@@ -25,6 +25,7 @@ async def apply_preset(
     brightness_override=None,
     light_brightness=None,
     gradient=True,
+    saturation=None,
 ):
     preset_data = RUNTIME_PRESETS.get(preset_id)
     for preset in [] if preset_data else PRESET_DATA.get("presets", []):
@@ -38,6 +39,8 @@ async def apply_preset(
     brightness = brightness_override if brightness_override else preset_data.get("bri", 255)
 
     preset_colors = [(light["x"], light["y"]) for light in preset_data["lights"]]
+    # color intensity of the scene (Scene Studio 3.5): applied on top of the preset, also for music colors
+    preset_colors = adjust_saturation(preset_colors, saturation)
 
     randomized_colors = None
     if shuffle:
