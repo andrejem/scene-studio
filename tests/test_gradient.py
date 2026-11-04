@@ -74,3 +74,22 @@ async def test_saved_scene_keeps_gradient_setting(hass: HomeAssistant, monkeypat
     await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
     await hass.async_block_till_done()
     assert published == [] and turned_on == ["light.signe"]
+
+
+def _z2m_xy(hex_color):
+    """What Zigbee2MQTT makes of a gradient hex color (ColorRGB.fromHex(hex).toXY(), no gamma)."""
+    r, g, b = (int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    big_x = r * 0.664511 + g * 0.154324 + b * 0.162028
+    big_y = r * 0.283881 + g * 0.668433 + b * 0.047685
+    big_z = r * 0.000088 + g * 0.07231 + b * 0.986039
+    total = big_x + big_y + big_z
+    return big_x / total, big_y / total
+
+
+@pytest.mark.parametrize("xy", [(0.17, 0.7), (0.15, 0.06), (0.64, 0.33), (0.3, 0.32), (0.2, 0.45), (0.45, 0.41)])
+def test_hex_round_trip(xy):
+    """The lamp gets the xy of the preset back, so gradients are as saturated as single colors."""
+    from custom_components.scene_studio.gradient import _hex
+
+    x, y = _z2m_xy(_hex(xy))
+    assert abs(x - xy[0]) < 0.01 and abs(y - xy[1]) < 0.01

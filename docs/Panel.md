@@ -38,6 +38,11 @@ side panel; on phones the room chips are on top and the editor fills the screen.
 - The scene that was activated last in a room is **outlined** while lights of the room are on, or
   while it is running as dynamic scene.
 - The **pencil** opens the scene editor, **New scene** (button or the dashed tile of a room) creates one.
+- **Arrange** (admins, next to the room name): the tiles wiggle, drag them into place with the mouse or
+  a finger, then **Done**. **Same order in all rooms** sorts the scenes of every other room the same way,
+  matched by the name without the room (*Bright*, *Dimmed*, …); scenes only one room has go to the end.
+  The order is stored with the scenes: room cards show the same order, editing a scene keeps its place,
+  new scenes come last. (`scene_studio/set_scene_order`, attribute `order` of the scene entities)
 
 ## Presets tab
 
@@ -54,8 +59,11 @@ side panel; on phones the room chips are on top and the editor fills the screen.
     ([details](Per-light%20timing.md)).
   - *Reset settings* restores the defaults.
 - **Save as scene** – opens the scene editor with the last tapped preset and these settings.
-- **Preset from a photo** (admins) – see [Scene from photo](Scene%20from%20photo.md).
-- **Search**, category chips and **favorites** (star on a tile) help to find presets.
+- **New preset** (admins) – from colors or a photo; the **pencil** on a tile changes a preset – see
+  [Own presets](Scene%20from%20photo.md).
+- **Search**, category chips and **favorites** (star on a tile) help to find presets. With a mouse,
+  star and pencil show when you point at a tile.
+- **Hidden presets** (admins, at the end) – built-in presets you hid; the eye shows them again.
 - Tap a preset to apply it to the chosen lights. The preset is shown on top of the card with
   *applied*, its tile is outlined and a short message confirms it at the bottom of the screen.
 
@@ -69,13 +77,13 @@ The editor works on its own copy of the scene; the *Presets* tab is not changed 
 
 | Field | Meaning |
 |---|---|
-| **Name** | Name of the scene and its scene entity |
+| **Name** | Name of the scene and its scene entity. A new scene is named after room and preset (*Bedroom Relax*) until you type a name |
 | **Room** | Area of the scene entity (admins). Same as setting the area in the entity settings |
 | **Preset** | **Change** opens the preset picker (search, favorites first). The preset **Music** makes it a [music scene](Music%20scenes.md) |
 | **Music** | Only with the preset Music: speaker, *Start by itself when music starts*, *Also when a light is already on* |
 | **Apply to** | The lights of the scene |
 | **Once / Dynamic**, **Brightness**, **More options** | As in the presets tab |
-| **Lights of this scene** | Brightness per light, *Only if on*, *Leave out*, groups as one light – see [Lights of a scene](Lights%20of%20a%20scene.md) |
+| **Lights of this scene** | Brightness per light, *Only if on*, *Don't control*, groups as one light – see [Lights of a scene](Lights%20of%20a%20scene.md) |
 | **All colors on gradient lamps** | Only when the scene has a gradient lamp: off = one color on these lamps too ([gradient lamps](Lights%20of%20a%20scene.md#gradient-lamps)) |
 | **Use in automations** | Entity ID of the scene with a **Copy** button |
 

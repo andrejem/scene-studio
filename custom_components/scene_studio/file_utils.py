@@ -1,6 +1,6 @@
 # Modified by andrejem (2026): presets are built by load_preset_data(), so presets created in the
 # panel and replaced preset images (overrides) can be reloaded without a restart
-# (async_reload_preset_data reads the files in the executor).
+# (async_reload_preset_data reads the files in the executor). Built-in presets can be hidden by the user.
 # Runtime presets for music scenes (RUNTIME_PRESETS). No file access at import: the presets are loaded
 # and the userdata folder is created when the config entry is set up.
 import json
@@ -47,7 +47,15 @@ def load_preset_data():
                     preset["img"] = override["img"]
                 if override.get("lights"):
                     preset["lights"] = override["lights"]
-                preset["overridden"] = True
+                if override.get("bri"):
+                    preset["original_bri"] = preset.get("bri")
+                    preset["bri"] = override["bri"]
+                if override.get("img") or override.get("lights") or override.get("bri"):
+                    preset["overridden"] = True
+                if override.get("hidden"):
+                    # hidden by the user in the panel (shown under "Hidden presets", can come back)
+                    preset["hidden"] = True
+                    preset["user_hidden"] = True
         data.get("presets", []).extend([{**d, 'custom': True} for d in custom.get("presets", [])])
         data.get("categories", []).extend([{**d, 'custom': True} for d in custom.get("categories", [])])
     return data

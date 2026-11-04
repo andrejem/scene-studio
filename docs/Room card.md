@@ -6,7 +6,7 @@
 
 - **Room slider** – tap to switch all lights of the room on/off, drag for brightness, hold for details.
 - **Scene tiles** – every `scene.*` entity assigned to the area, with the preset image for saved
-  scenes. Tap activates the scene, **double tap** applies a dynamic saved scene once (static),
+  scenes, in the order set with **Arrange** in the panel. Tap activates the scene, **double tap** applies a dynamic saved scene once (static),
   hold opens the details. The active scene is outlined and checked, dynamic scenes show an icon,
   [music scenes](Music%20scenes.md) a note.
 - **Light rows** – light helpers (light groups) of the room as full-width rows, expandable (›) to
@@ -35,9 +35,9 @@ area: arbeitszimmer
 | `name`        | area name | Title of the room slider                                                  |
 | `columns`     | 3       | Columns of the scene tiles                                                  |
 | `light_columns` | 2     | Columns of the single light rows (groups always use the full width)        |
-| `scenes`      | auto    | Explicit list and order of scene entities instead of all scenes of the area |
-| `lights`      | auto    | Explicit list of light entities instead of all lights of the area          |
-| `hide`        | –       | Entities (lights or scenes) not to show, e.g. motion-only scenes            |
+| `scenes`      | auto    | Explicit list and order of scene entities instead of all scenes of the area. In the visual editor the list offers the scenes of the chosen area |
+| `lights`      | auto    | Explicit list of light entities instead of all lights of the area (the editor offers the lights of the area) |
+| `hide`        | –       | Entities (lights or scenes) not to show, e.g. motion-only scenes (the editor offers those of the area) |
 | `master`      | auto    | Light (group) used for the room slider                                      |
 | `structural`  | –       | Additional light groups that are not shown as rows (only their members)     |
 | `show_lights` | true    | Show the light rows                                                         |
@@ -57,8 +57,8 @@ area: arbeitszimmer
 
 ## Raumlicht (optional)
 
-The card works without Raumlicht. Without it there is no motion chip, scene tiles are sorted by name
-(use `scenes` to set an order) and room-wide light groups that do not contain every light of the
+The card works without Raumlicht. Without it there is no motion chip, scene tiles follow the order set
+with **Arrange** in the panel (otherwise by name; `scenes` sets an order of its own) and room-wide light groups that do not contain every light of the
 room are shown as rows (use `structural` to hide them).
 
 If the area has a Raumlicht room, the card reads the `scenes` attribute of its

@@ -8,6 +8,7 @@
 # Music scenes: colors from the album cover of a media player (music_scenes.py).
 # Gradient lamps get all colors of the preset (gradient.py, option gradient).
 # The integration can be reloaded: everything that runs lives in entry.runtime_data (data.py).
+# activate_saved_scene marks the scene entity as activated (active tile).
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
@@ -335,6 +336,12 @@ async def async_setup(hass, config):
             raise vol.Invalid(f"Saved scene '{scene_id}' not found.")
 
         override = call.data.get(ATTR_TARGETS)
+        if not override:
+            # the scene entity shows the last activation (active tile in panel and room card), also
+            # when the scene is started through this service (panel, buttons) instead of scene.turn_on
+            entity = d.scene_entities.get(scene_id)
+            if entity is not None:
+                entity.mark_activated()
         if is_music_scene(scene) and not override:
             await d.music_scenes.async_activate(scene)
             return

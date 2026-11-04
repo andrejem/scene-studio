@@ -164,3 +164,64 @@ async def test_admin_only(hass, hass_ws_client, hass_read_only_access_token, mon
     client = await hass_ws_client(hass, hass_read_only_access_token)
     r = await ws(client, {"type": "scene_studio/reset_preset", "preset_id": "x"})
     assert not r["success"] and r["error"]["code"] == "unauthorized"
+
+
+async def test_builtin_default_brightness(hass, hass_ws_client, monkeypatch, userdata):
+    """The default brightness of a built-in preset can be changed and restored."""
+    await setup(hass, monkeypatch)
+    client = await hass_ws_client(hass)
+    builtin = next(p for p in userdata.PRESET_DATA["presets"] if not p.get("custom") and p.get("bri") != 77)
+    original = builtin["bri"]
+
+    r = await ws(client, {"type": "scene_studio/set_preset_image", "preset_id": builtin["id"], "bri": 77})
+    assert r["success"], r
+    changed = next(p for p in userdata.PRESET_DATA["presets"] if p["id"] == builtin["id"])
+    assert changed["bri"] == 77 and changed["overridden"] and changed["img"] == builtin["img"]
+
+    r = await ws(client, {"type": "scene_studio/reset_preset", "preset_id": builtin["id"]})
+    assert r["success"], r
+    restored = next(p for p in userdata.PRESET_DATA["presets"] if p["id"] == builtin["id"])
+    assert restored["bri"] == original
+
+
+async def test_preset_from_colors(hass, hass_ws_client, monkeypatch, userdata):
+    """A preset made from colors keeps the flag, a photo later removes it."""
+    await setup(hass, monkeypatch)
+    client = await hass_ws_client(hass)
+    r = await ws(client, {"type": "scene_studio/save_custom_preset", "name": "Sunset", "bri": 200, "lights": COLORS,
+                          "image": JPEG, "generated": True, "default_category_name": "My presets"})
+    assert r["success"], r
+    preset = r["result"]["preset"]
+    assert custom(userdata)[0]["generated"] is True
+
+    r = await ws(client, {"type": "scene_studio/save_custom_preset", "preset_id": preset["id"], "name": "Sunset",
+                          "bri": 200, "lights": COLORS, "image": JPEG, "generated": False})
+    assert r["success"], r
+    assert "generated" not in custom(userdata)[0]
+
+
+async def test_hide_builtin_preset(hass, hass_ws_client, monkeypatch, userdata):
+    """Built-in presets can be hidden and shown again; restoring the original keeps them hidden."""
+    await setup(hass, monkeypatch)
+    client = await hass_ws_client(hass)
+    builtin = next(p for p in userdata.PRESET_DATA["presets"] if not p.get("custom") and not p.get("hidden"))
+    get = lambda: next(p for p in userdata.PRESET_DATA["presets"] if p["id"] == builtin["id"])  # noqa: E731
+
+    r = await ws(client, {"type": "scene_studio/set_preset_hidden", "preset_id": builtin["id"], "hidden": True})
+    assert r["success"], r
+    assert get()["hidden"] and get()["user_hidden"] and not get().get("overridden")
+
+    await ws(client, {"type": "scene_studio/set_preset_image", "preset_id": builtin["id"], "bri": 50})
+    await ws(client, {"type": "scene_studio/reset_preset", "preset_id": builtin["id"]})
+    assert get()["hidden"] and get()["bri"] == builtin["bri"]
+
+    r = await ws(client, {"type": "scene_studio/set_preset_hidden", "preset_id": builtin["id"], "hidden": False})
+    assert r["success"], r
+    assert not get().get("hidden") and not get().get("user_hidden")
+    assert "overrides" not in json.load(open(userdata.custom_presets_path))
+
+    # own presets are deleted, not hidden
+    r = await ws(client, {"type": "scene_studio/save_custom_preset", "name": "Mine", "bri": 100, "lights": COLORS,
+                          "image": JPEG, "default_category_name": "My presets"})
+    r = await ws(client, {"type": "scene_studio/set_preset_hidden", "preset_id": r["result"]["preset"]["id"], "hidden": True})
+    assert not r["success"]

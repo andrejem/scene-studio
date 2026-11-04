@@ -2,6 +2,9 @@
 # gradient lamps like Signe, Play gradient or the gradient light strip in Zigbee2MQTT) get the colors
 # of the preset as a gradient instead of one color. Home Assistant's light entity knows only one
 # color, so the gradient is sent to Zigbee2MQTT directly over MQTT.
+# Zigbee2MQTT reads the hex colors of a gradient as linear "Wide RGB D65" values, without the sRGB
+# gamma of normal colors: the colors are converted the same way, so the lamp gets exactly the xy of
+# the preset (with the usual sRGB conversion they came out pale, almost white).
 
 import json
 import logging
@@ -9,7 +12,6 @@ import logging
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from homeassistant.util import color as color_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,8 +20,20 @@ GRADIENT_STYLE = "linear"
 
 
 def _hex(xy) -> str:
-    r, g, b = color_util.color_xy_to_RGB(xy[0], xy[1])
-    return f"#{r:02x}{g:02x}{b:02x}"
+    """xy as the hex color Zigbee2MQTT turns back into the same xy (linear Wide RGB D65, no gamma)."""
+    x, y = float(xy[0]), float(xy[1])
+    if y <= 0:
+        return "#ffffff"
+    big_x = x / y
+    big_z = (1.0 - x - y) / y
+    rgb = (
+        big_x * 1.656492 - 0.354851 - big_z * 0.255038,
+        -big_x * 0.707196 + 1.655397 + big_z * 0.036152,
+        big_x * 0.051713 - 0.121364 + big_z * 1.011530,
+    )
+    rgb = [max(0.0, c) for c in rgb]
+    top = max(rgb) or 1.0
+    return "#" + "".join(f"{round(c / top * 255):02x}" for c in rgb)
 
 
 def gradient_colors(preset_colors, first_color) -> list:

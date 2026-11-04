@@ -1,5 +1,6 @@
 // Modified by andrejem (2026): optional action icon (e.g. edit) on tiles, on the left when the tile
-// also has the favorite star; badge (e.g. "dynamic"), active state and a dashed "new" tile
+// also has the favorite star; badge (e.g. "dynamic"), active state and a dashed "new" tile;
+// with a mouse the icons only show on hover (a favorite keeps its star), muted look for hidden presets
 
 import React from "react";
 import HaIconButton from "./hass/building_blocks/HaIconButton";
@@ -22,6 +23,7 @@ export const PresetTile :React.FunctionComponent<{
     badgeIcon?: string
     active?: boolean
     small?: boolean
+    muted?: boolean
     title?: string
 }> = ({
     id,
@@ -40,6 +42,7 @@ export const PresetTile :React.FunctionComponent<{
     badgeIcon,
     active,
     small,
+    muted,
     title
 }): React.JSX.Element => {
     // These two variables are _somehow_ required because without the change in key, the icon won't change even though we get rerendered ??
@@ -66,7 +69,7 @@ export const PresetTile :React.FunctionComponent<{
 
     return (
         <div
-            className={"tile" + (active ? " active" : "") + (small ? " small" : "")}
+            className={"tile" + (active ? " active" : "") + (small ? " small" : "") + (muted ? " muted" : "")}
             role={"button"}
             tabIndex={0}
             title={title}
@@ -103,7 +106,7 @@ export const PresetTile :React.FunctionComponent<{
             {
                 onFavClick &&
                 <div
-                    className={"tile-top-icon-container"}
+                    className={"tile-top-icon-container" + (isFav ? " keep" : "")}
                 >
                     {
                         isFav ? favedIcon : unFavedIcon

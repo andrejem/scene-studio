@@ -177,6 +177,14 @@ button { font: inherit; color: inherit; }
 .sp-group { display: flex; flex-direction: column; gap: 10px; }
 .sp-section-head { display: flex; align-items: baseline; justify-content: space-between; }
 .sp-section-head h3 { margin: 0; font-size: 16px; font-weight: 500; }
+.sp-section-tools, .sp-arrange-actions { display: inline-flex; align-items: center; gap: 8px; }
+.sp-btn.text.sp-arrange { padding: 2px 8px; font-size: 13px; }
+.sp-grid.arranging .sp-drag { touch-action: none; cursor: grab; animation: sp-wiggle 0.28s ease-in-out infinite alternate; }
+.sp-grid.arranging .sp-drag:nth-child(2n) { animation-delay: 0.14s; }
+.sp-grid.arranging .sp-drag.dragging { opacity: 0.6; cursor: grabbing; animation: none; }
+.sp-grid.arranging .sp-drag .tile { pointer-events: none; }
+@keyframes sp-wiggle { from { transform: rotate(-0.8deg); } to { transform: rotate(0.8deg); } }
+@media (prefers-reduced-motion: reduce) { .sp-grid.arranging .sp-drag { animation: none; } }
 
 /* tile grid */
 .sp-grid {
@@ -266,6 +274,14 @@ button { font: inherit; color: inherit; }
     z-index: 1;
     filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
 }
+/* with a mouse, pencil and star only show on hover (a favorite keeps its star); touch screens always show them */
+@media (hover: hover) {
+    .tile .tile-top-icon-container { opacity: 0; transition: opacity 0.15s; }
+    .tile:hover .tile-top-icon-container,
+    .tile:focus-within .tile-top-icon-container,
+    .tile .tile-top-icon-container.keep { opacity: 1; }
+}
+.tile.muted .tile-bg-img { filter: grayscale(0.7) brightness(0.7); }
 .tile-badge {
     position: absolute;
     top: 8px;
@@ -479,11 +495,13 @@ button { font: inherit; color: inherit; }
 }
 .sp-sheet-head {
     flex: none;
+    /* full screen on phones: keep the buttons below the status bar (iPhone notch, Companion app) */
+    box-sizing: content-box;
     height: 56px;
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 0 8px;
+    padding: env(safe-area-inset-top, 0px) calc(8px + env(safe-area-inset-right, 0px)) 0 calc(8px + env(safe-area-inset-left, 0px));
     background: var(--sp-card);
     border-bottom: 1px solid var(--sp-line);
 }

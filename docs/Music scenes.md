@@ -104,7 +104,7 @@ before. When the party is over and the music stops, everything returns to the st
 ### Keep a lamp out of it
 
 A cabinet light, a reading lamp or a light strip that should never be touched: open the scene, tap
-**Leave out** next to the lamp under *Lights of this scene* and save. Left-out lights are not turned
+**Don't control** next to the lamp under *Lights of this scene* and save. Lights that are not controlled are not turned
 on, off or changed – see [Lights of a scene](Lights%20of%20a%20scene.md). With a percentage per
 light, a long LED strip can follow the music at 20 % while the other lights are at full brightness.
 

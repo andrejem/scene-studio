@@ -4,9 +4,8 @@ Starting with v1.1.0, this integration also allows you to have your own custom p
 
 Be advised though that this feature will not hold your hand. It is intended to be used by developers.
 
-> Presets can also be created from a photo in the panel, without editing JSON - see
-> [Scene from photo](Scene%20from%20photo.md). Both use the same `presets.json`; hand-written
-> entries are kept.
+> Presets can also be created in the panel from colors or a photo, without editing JSON - see
+> [Own presets](Scene%20from%20photo.md). Both use the same `presets.json`; hand-written entries are kept.
 
 ## How
 
