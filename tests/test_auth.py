@@ -142,3 +142,30 @@ async def test_reload(hass: HomeAssistant, monkeypatch, userdata):
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert find_data(hass) is None
+
+
+async def test_service_activation_is_recorded(hass: HomeAssistant, monkeypatch, userdata):
+    """activate_saved_scene marks the scene entity like scene.turn_on (active tile), not for lamp modes."""
+    from homeassistant.util import dt as dt_util
+
+    await setup(hass, monkeypatch)
+    hass.states.async_set("light.a", "off", {"supported_color_modes": ["xy"]})
+    hass.services.async_register("light", "turn_on", lambda call: None)
+    builtin = next(p for p in userdata.PRESET_DATA["presets"] if not p.get("custom"))
+    ids = {}
+    for name in ("Bright", "Aurora"):
+        r = await hass.services.async_call("scene_studio", "save_scene", {
+            "name": name, "preset_id": builtin["id"], "targets": {"entity_id": ["light.a"]},
+        }, blocking=True, return_response=True)
+        ids[name] = r["scene"]["id"]
+    await hass.async_block_till_done()
+    assert hass.states.get("scene.bright").state == "unknown"
+
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": ids["Bright"]}, blocking=True)
+    first = dt_util.parse_datetime(hass.states.get("scene.bright").state)
+    assert first is not None
+
+    # a lamp mode (other targets) does not make the scene the active one
+    await hass.services.async_call("scene_studio", "activate_saved_scene",
+                                   {"id": ids["Aurora"], "targets": {"entity_id": ["light.a"]}}, blocking=True)
+    assert hass.states.get("scene.aurora").state == "unknown"
