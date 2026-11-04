@@ -56,7 +56,9 @@ as for every scene.
 | Speaker *Any speaker that is playing*: that speaker stops, another one still plays | The scene follows the other one instead of ending |
 | The music stops or moves to another room | After 30 seconds the lights return to their state before the music scene (also *off*) |
 | You select another scene on these lights | The music scene ends, nothing is restored |
-| You turn all lights of the scene off | The music scene ends, nothing is restored |
+| You (or a motion light) turn all lights of the scene off | The music scene pauses, nothing is restored |
+| The lights come back on within 30 minutes (switch, motion light, app) while the music still plays | The music scene continues with the cover playing **now** |
+| They come back on and no music plays anymore, or another scene is started on them | The music scene is over |
 | Home Assistant restarts | Running music scenes are forgotten, like dynamic scenes. Select the scene again |
 
 The lights only return to their state before if the music scene actually changed them.

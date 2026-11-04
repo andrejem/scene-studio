@@ -54,6 +54,9 @@ AUTO_START_OPTIONS = (AUTO_START_NEVER, AUTO_START_FOLLOW, AUTO_START_ALWAYS)
 
 STOP_DELAY = 30  # seconds without music before the lights return (track changes, hand-overs)
 MIN_CHANGE_INTERVAL = 5  # seconds: skipping through tracks does not make the lights flicker
+# lights of a music scene turned off (e.g. by a motion light): if they come back on within this time
+# while the music still plays, the scene continues with the current cover
+WAKE_WINDOW = 30 * 60
 COVER_TRANSITION = 3
 TRACK_TRANSITION = 2  # new track, same cover: the colors move to other lamps
 RESTORE_TRANSITION = 2
@@ -162,6 +165,8 @@ class MusicScenes:
         self.store = store
         self.manager = dynamic_scene_manager
         self.sessions: dict[str, MusicSession] = {}
+        # scene_id -> (snapshot before the music, unsub light listener, unsub expiry timer)
+        self._sleeping: dict[str, tuple[dict, object, object]] = {}
         self._colors: dict[str, tuple[str | None, list]] = {}  # scene_id -> (album, colors)
         self._unsub_players = None
         self._unsub_store = store.add_listener(self._on_store_change)
@@ -363,9 +368,55 @@ class MusicScenes:
         if session is None or self.is_internal() or not session.applied:
             return
         if not any(self._is_on(entity_id) for entity_id in session.lights):
-            # Lights turned off by hand (or by a motion light): the music scene is over, nothing to restore
-            _LOGGER.debug("Music scene %s ended, all lights off", scene_id)
+            # Lights turned off by hand (or by a motion light): the music scene pauses. If the lights
+            # come back on soon while the music plays, it continues with the current cover.
+            _LOGGER.debug("Music scene %s paused, all lights off", scene_id)
+            self._sleep(session)
             self._drop(scene_id)
+
+    def _sleep(self, session: MusicSession):
+        self._wake_cancel(session.scene_id)
+        unsub_lights = async_track_state_change_event(
+            self.hass, session.lights, functools.partial(self._on_sleeping_light, session.scene_id)
+        )
+        unsub_timer = async_call_later(
+            self.hass, WAKE_WINDOW, functools.partial(self._wake_expired, session.scene_id)
+        )
+        self._sleeping[session.scene_id] = (session.snapshot, unsub_lights, unsub_timer)
+
+    def _wake_cancel(self, scene_id: str):
+        entry = self._sleeping.pop(scene_id, None)
+        if entry is not None:
+            for unsub in entry[1:]:
+                unsub()
+
+    @callback
+    def _wake_expired(self, scene_id: str, _now=None):
+        entry = self._sleeping.pop(scene_id, None)
+        if entry is not None:
+            entry[1]()
+
+    @callback
+    def _on_sleeping_light(self, scene_id: str, event: Event):
+        new = event.data.get("new_state")
+        if self.is_internal() or new is None or new.state != "on" or scene_id in self.sessions:
+            return
+        snapshot = self._sleeping[scene_id][0] if scene_id in self._sleeping else {}
+        self._wake_cancel(scene_id)
+        scene = self.store.get(scene_id)
+        if scene is None or not is_music_scene(scene):
+            return
+        player = self._player_of(scene)
+        if not player or not self._playing(player):
+            return  # no music anymore: the lights stay as they were turned on
+        _LOGGER.debug("Music scene %s continues, lights back on", scene_id)
+        self.hass.async_create_task(self._wake(scene, snapshot))
+
+    async def _wake(self, scene: dict, snapshot: dict):
+        await self.async_activate(scene)
+        session = self.sessions.get(scene["id"])
+        if session is not None and snapshot:
+            session.snapshot = snapshot  # at the end of the music: the state before the music
 
     @callback
     def _on_player(self, event: Event):
@@ -427,6 +478,7 @@ class MusicScenes:
     async def async_activate(self, scene: dict) -> None:
         """Start (or re-select) a music scene."""
         scene_id = scene["id"]
+        self._wake_cancel(scene_id)
         player = self._player_of(scene)
         lights = self._scene_lights(scene)
         previous = self.sessions.get(scene_id)
@@ -635,7 +687,7 @@ class MusicScenes:
     @callback
     def release_lights(self, light_entity_ids) -> None:
         """Another scene was started on these lights: music sessions on them end without restoring."""
-        if self.is_internal() or not self.sessions:
+        if self.is_internal() or not (self.sessions or self._sleeping):
             return
         lights = set(light_entity_ids)
         for entity_id in list(lights):
@@ -643,6 +695,10 @@ class MusicScenes:
         for scene_id, session in list(self.sessions.items()):
             if lights & set(session.lights):
                 self._drop(scene_id)
+        for scene_id in list(self._sleeping):
+            scene = self.store.get(scene_id)
+            if scene is None or lights & set(self._scene_lights(scene)):
+                self._wake_cancel(scene_id)
 
     def _cancel_timers(self, session: MusicSession):
         for attr in ("stop_timer", "change_timer", "unsub_lights"):
@@ -698,6 +754,8 @@ class MusicScenes:
     def async_shutdown(self):
         for scene_id in list(self.sessions):
             self._drop(scene_id)
+        for scene_id in list(self._sleeping):
+            self._wake_cancel(scene_id)
         if self._unsub_players is not None:
             self._unsub_players()
         self._unsub_store()

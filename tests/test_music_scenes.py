@@ -366,3 +366,51 @@ async def test_saturation_of_a_scene(hass: HomeAssistant, monkeypatch, userdata)
     await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": r["scene"]["id"]}, blocking=True)
     await hass.async_block_till_done()
     assert sat(hass.states.get("light.x").attributes["xy_color"])[1] > 0.9
+
+
+async def test_lights_back_on_continue_with_the_current_cover(hass: HomeAssistant, monkeypatch, userdata):
+    """A motion light turns the lights off and later on again (plain light.turn_on): while the music
+    still plays, the music scene continues with the cover playing now, not with the old colors."""
+    fetched = await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Kitchen music", LIGHTS, PLAYER)
+    player(hass, PLAYER, "playing", album="Album 1")
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.async_block_till_done()
+    assert all(on(hass, l) for l in LIGHTS)
+
+    await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions
+
+    player(hass, PLAYER, "playing", album="Album 2")  # the cover changed meanwhile
+    await wait(hass, 60)
+    await hass.services.async_call("light", "turn_on", {"entity_id": LIGHTS}, blocking=True)
+    await hass.async_block_till_done()
+    assert scene_id in music(hass).sessions
+    assert fetched[-1] == key("Album 2")
+
+
+async def test_lights_back_on_without_music_or_other_scene(hass: HomeAssistant, monkeypatch, userdata):
+    await music_setup(hass, monkeypatch)
+    scene_id = await save(hass, "Kitchen music", LIGHTS, PLAYER)
+    player(hass, PLAYER, "playing")
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.async_block_till_done()
+    await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
+    await hass.async_block_till_done()
+
+    # another scene on these lights: the music scene does not come back
+    await hass.services.async_call("scene_studio", "apply_preset", {
+        "preset_id": PRESET, "targets": {"entity_id": LIGHTS}}, blocking=True)
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions and not music(hass)._sleeping
+
+    # music stopped: lights turned on stay as they are
+    await hass.services.async_call("scene_studio", "activate_saved_scene", {"id": scene_id}, blocking=True)
+    await hass.async_block_till_done()
+    await hass.services.async_call("light", "turn_off", {"entity_id": LIGHTS}, blocking=True)
+    player(hass, PLAYER, "paused")
+    await hass.async_block_till_done()
+    await hass.services.async_call("light", "turn_on", {"entity_id": LIGHTS}, blocking=True)
+    await hass.async_block_till_done()
+    assert scene_id not in music(hass).sessions
