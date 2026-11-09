@@ -33,6 +33,7 @@ from .const import (
     ATTR_TARGETS,
     ATTR_TRANSITION,
     DOMAIN,
+    MEDIA_PLAYER_ANY,
     MUSIC_PRESET_ID,
     SERVICE_APPLY_PRESET,
     SERVICE_START_DYNAMIC_SCENE,
@@ -53,6 +54,9 @@ AUTO_START_OPTIONS = (AUTO_START_NEVER, AUTO_START_FOLLOW, AUTO_START_ALWAYS)
 
 STOP_DELAY = 30  # seconds without music before the lights return (track changes, hand-overs)
 MIN_CHANGE_INTERVAL = 5  # seconds: skipping through tracks does not make the lights flicker
+# lights of a music scene turned off (e.g. by a motion light): if they come back on within this time
+# while the music still plays, the scene continues with the current cover
+WAKE_WINDOW = 30 * 60
 COVER_TRANSITION = 3
 TRACK_TRANSITION = 2  # new track, same cover: the colors move to other lamps
 RESTORE_TRANSITION = 2
@@ -61,6 +65,10 @@ MAX_COLORS = 5
 
 # Set while the music scene manager calls services itself, so it does not end its own session
 _INTERNAL = contextvars.ContextVar("scene_studio_music_internal", default=False)
+
+
+# lowest saturation of a cover color on the lights
+VIVID_MIN = 0.8
 
 
 def runtime_preset_id(scene_id: str) -> str:
@@ -116,12 +124,15 @@ def extract_cover_colors(data: bytes, max_colors: int = MAX_COLORS) -> list[tupl
     hsv = []
     for k in picked:
         hue = (math.atan2(hue_y[k], hue_x[k]) / (2 * math.pi)) % 1
-        sat = min(1.0, sat_sum[k] / weight[k] * 1.15 + 0.1)
+        # lamps look washed out with the cover's own saturation (often 40-60 %): keep the hue,
+        # but always use a vivid 80-100 % for the light
+        cover_sat = sat_sum[k] / weight[k]
+        sat = VIVID_MIN + (1.0 - VIVID_MIN) * min(1.0, max(0.0, (cover_sat - 0.25) / 0.6))
         hsv.append((hue, sat))
     if len(hsv) < 3:
         for hue, sat in list(hsv):
             hsv.append(((hue + 0.035) % 1, sat))
-            hsv.append(((hue - 0.035) % 1, max(0.35, sat * 0.75)))
+            hsv.append(((hue - 0.035) % 1, max(VIVID_MIN, sat * 0.9)))
 
     colors = []
     for hue, sat in hsv[: max(max_colors, 3)]:
@@ -154,6 +165,8 @@ class MusicScenes:
         self.store = store
         self.manager = dynamic_scene_manager
         self.sessions: dict[str, MusicSession] = {}
+        # scene_id -> (snapshot before the music, unsub light listener, unsub expiry timer)
+        self._sleeping: dict[str, tuple[dict, object, object]] = {}
         self._colors: dict[str, tuple[str | None, list]] = {}  # scene_id -> (album, colors)
         self._unsub_players = None
         self._unsub_store = store.add_listener(self._on_store_change)
@@ -171,8 +184,34 @@ class MusicScenes:
     def _music_scenes(self) -> list[dict]:
         return [s for s in self.store.get_all() if is_music_scene(s)]
 
+    @staticmethod
+    def _is_any(scene: dict) -> bool:
+        return (scene.get(ATTR_MUSIC) or {}).get("media_player") == MEDIA_PLAYER_ANY
+
+    def _candidates(self) -> list[str]:
+        """Speakers an "any speaker" scene listens to: all Sonos, without Sonos all media players."""
+        sonos = [e.entity_id for e in er.async_get(self.hass).entities.values()
+                 if e.domain == "media_player" and e.platform == "sonos" and not e.disabled_by]
+        return sorted(sonos or self.hass.states.async_entity_ids("media_player"))
+
+    def _music(self, player: str | None) -> bool:
+        """Playing with a cover: TV sound or line-in on a Sonos has none and gives no colors."""
+        state = self.hass.states.get(player) if player else None
+        return state is not None and state.state == "playing" and bool(state.attributes.get("entity_picture"))
+
+    def _playing_candidate(self, exclude: str | None = None) -> str | None:
+        """The speaker with a cover that started playing most recently."""
+        playing = [self.hass.states.get(p) for p in self._candidates() if p != exclude and self._music(p)]
+        playing = [s for s in playing if s is not None]
+        return max(playing, key=lambda s: s.last_changed).entity_id if playing else None
+
     def _player_of(self, scene: dict) -> str | None:
         chosen = (scene.get(ATTR_MUSIC) or {}).get("media_player")
+        if chosen == MEDIA_PLAYER_ANY:
+            session = self.sessions.get(scene["id"])
+            if session is not None and session.media_player and self._music(session.media_player):
+                return session.media_player
+            return self._playing_candidate() or (session.media_player if session else None)
         if chosen:
             return chosen
         return self.player_in_area(self._scene_area(scene))
@@ -313,7 +352,11 @@ class MusicScenes:
         if self._unsub_players is not None:
             self._unsub_players()
             self._unsub_players = None
-        players = sorted({p for p in (self._player_of(s) for s in self._music_scenes()) if p})
+        scenes = self._music_scenes()
+        players = {p for p in (self._player_of(s) for s in scenes) if p}
+        if any(self._is_any(s) for s in scenes):
+            players.update(self._candidates())
+        players = sorted(players)
         if players:
             self._unsub_players = async_track_state_change_event(self.hass, players, self._on_player)
 
@@ -330,9 +373,55 @@ class MusicScenes:
         if session is None or self.is_internal() or not session.applied:
             return
         if not any(self._is_on(entity_id) for entity_id in session.lights):
-            # Lights turned off by hand (or by a motion light): the music scene is over, nothing to restore
-            _LOGGER.debug("Music scene %s ended, all lights off", scene_id)
+            # Lights turned off by hand (or by a motion light): the music scene pauses. If the lights
+            # come back on soon while the music plays, it continues with the current cover.
+            _LOGGER.debug("Music scene %s paused, all lights off", scene_id)
+            self._sleep(session)
             self._drop(scene_id)
+
+    def _sleep(self, session: MusicSession):
+        self._wake_cancel(session.scene_id)
+        unsub_lights = async_track_state_change_event(
+            self.hass, session.lights, functools.partial(self._on_sleeping_light, session.scene_id)
+        )
+        unsub_timer = async_call_later(
+            self.hass, WAKE_WINDOW, functools.partial(self._wake_expired, session.scene_id)
+        )
+        self._sleeping[session.scene_id] = (session.snapshot, unsub_lights, unsub_timer)
+
+    def _wake_cancel(self, scene_id: str):
+        entry = self._sleeping.pop(scene_id, None)
+        if entry is not None:
+            for unsub in entry[1:]:
+                unsub()
+
+    @callback
+    def _wake_expired(self, scene_id: str, _now=None):
+        entry = self._sleeping.pop(scene_id, None)
+        if entry is not None:
+            entry[1]()
+
+    @callback
+    def _on_sleeping_light(self, scene_id: str, event: Event):
+        new = event.data.get("new_state")
+        if self.is_internal() or new is None or new.state != "on" or scene_id in self.sessions:
+            return
+        snapshot = self._sleeping[scene_id][0] if scene_id in self._sleeping else {}
+        self._wake_cancel(scene_id)
+        scene = self.store.get(scene_id)
+        if scene is None or not is_music_scene(scene):
+            return
+        player = self._player_of(scene)
+        if not player or not self._playing(player):
+            return  # no music anymore: the lights stay as they were turned on
+        _LOGGER.debug("Music scene %s continues, lights back on", scene_id)
+        self.hass.async_create_task(self._wake(scene, snapshot))
+
+    async def _wake(self, scene: dict, snapshot: dict):
+        await self.async_activate(scene)
+        session = self.sessions.get(scene["id"])
+        if session is not None and snapshot:
+            session.snapshot = snapshot  # at the end of the music: the state before the music
 
     @callback
     def _on_player(self, event: Event):
@@ -343,9 +432,23 @@ class MusicScenes:
         playing = new is not None and new.state == "playing"
 
         for scene in self._music_scenes():
-            if self._player_of(scene) != player:
-                continue
             session = self.sessions.get(scene["id"])
+            if self._is_any(scene):
+                if player not in self._candidates():
+                    continue
+                if not self._music(player) and (session is None or session.media_player != player):
+                    continue  # e.g. TV sound on a Sonos: no cover, no colors
+                if session is not None and session.media_player != player:
+                    if not self._music(session.media_player):
+                        # the speaker of the scene went quiet, another one plays: follow it
+                        session.media_player = player
+                        session.album = session.track = None
+                    else:
+                        continue
+                elif session is None and not playing:
+                    continue
+            elif self._player_of(scene) != player:
+                continue
             if session is not None:
                 if playing:
                     if session.stop_timer is not None:
@@ -382,6 +485,7 @@ class MusicScenes:
     async def async_activate(self, scene: dict) -> None:
         """Start (or re-select) a music scene."""
         scene_id = scene["id"]
+        self._wake_cancel(scene_id)
         player = self._player_of(scene)
         lights = self._scene_lights(scene)
         previous = self.sessions.get(scene_id)
@@ -545,6 +649,7 @@ class MusicScenes:
                 scene.get("brightness"),
                 light_brightness={k: v for k, v in (settings or {}).items() if v > 0} or None,
                 gradient=scene.get("gradient", True),
+                saturation=scene.get("saturation"),
             )
         finally:
             _INTERNAL.reset(token)
@@ -557,6 +662,15 @@ class MusicScenes:
         session.stop_timer = None
         if self._playing(session.media_player):
             return
+        scene = self.store.get(scene_id)
+        if scene is not None and self._is_any(scene):
+            other = self._playing_candidate(exclude=session.media_player)
+            if other is not None:
+                # music still plays elsewhere: take its cover instead of ending
+                session.media_player = other
+                session.album = session.track = None
+                self._schedule_cover(scene)
+                return
         self.hass.async_create_task(self.async_end(scene_id, restore=True))
 
     async def async_end(self, scene_id: str, restore: bool = True):
@@ -580,7 +694,7 @@ class MusicScenes:
     @callback
     def release_lights(self, light_entity_ids) -> None:
         """Another scene was started on these lights: music sessions on them end without restoring."""
-        if self.is_internal() or not self.sessions:
+        if self.is_internal() or not (self.sessions or self._sleeping):
             return
         lights = set(light_entity_ids)
         for entity_id in list(lights):
@@ -588,6 +702,10 @@ class MusicScenes:
         for scene_id, session in list(self.sessions.items()):
             if lights & set(session.lights):
                 self._drop(scene_id)
+        for scene_id in list(self._sleeping):
+            scene = self.store.get(scene_id)
+            if scene is None or lights & set(self._scene_lights(scene)):
+                self._wake_cancel(scene_id)
 
     def _cancel_timers(self, session: MusicSession):
         for attr in ("stop_timer", "change_timer", "unsub_lights"):
@@ -643,6 +761,8 @@ class MusicScenes:
     def async_shutdown(self):
         for scene_id in list(self.sessions):
             self._drop(scene_id)
+        for scene_id in list(self._sleeping):
+            self._wake_cancel(scene_id)
         if self._unsub_players is not None:
             self._unsub_players()
         self._unsub_store()

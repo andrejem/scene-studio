@@ -93,3 +93,30 @@ def test_hex_round_trip(xy):
 
     x, y = _z2m_xy(_hex(xy))
     assert abs(x - xy[0]) < 0.01 and abs(y - xy[1]) < 0.01
+
+
+async def test_gradient_lights_found_from_the_z2m_device_list(hass: HomeAssistant, monkeypatch, userdata):
+    """The Z2M device list is matched to the lights of the MQTT devices in Home Assistant."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    await setup(hass, monkeypatch)
+    mqtt_entry = MockConfigEntry(domain="mqtt")
+    mqtt_entry.add_to_hass(hass)
+    other_entry = MockConfigEntry(domain="hue")
+    other_entry.add_to_hass(hass)
+    dev_reg, ent_reg = dr.async_get(hass), er.async_get(hass)
+    signe = dev_reg.async_get_or_create(config_entry_id=mqtt_entry.entry_id,
+                                        identifiers={("mqtt", "zigbee2mqtt_0x00178801ABCDEF")})
+    ent_reg.async_get_or_create("light", "mqtt", "signe", device_id=signe.id, config_entry=mqtt_entry,
+                                suggested_object_id="signe_lamp")
+    hue = dev_reg.async_get_or_create(config_entry_id=other_entry.entry_id, identifiers={("hue", "0x00178801abcdef")})
+    ent_reg.async_get_or_create("light", "hue", "x", device_id=hue.id, config_entry=other_entry,
+                                suggested_object_id="hue_lamp")
+
+    gradient = runtime(hass).gradient
+    gradient._devices = {"0x00178801abcdef": "zigbee2mqtt/Signe"}
+    gradient._map_entities()
+    assert gradient.is_gradient("light.signe_lamp")
+    assert not gradient.is_gradient("light.hue_lamp")

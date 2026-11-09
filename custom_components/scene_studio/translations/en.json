@@ -59,6 +59,10 @@
         "gradient": {
           "name": "Gradient lamps",
           "description": "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
+        },
+        "saturation": {
+          "name": "Color intensity",
+          "description": "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
         }
       }
     },
@@ -125,6 +129,10 @@
         "gradient": {
           "name": "Gradient lamps",
           "description": "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
+        },
+        "saturation": {
+          "name": "Color intensity",
+          "description": "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
         }
       }
     },
@@ -234,7 +242,11 @@
         },
         "music": {
           "name": "Music scene",
-          "description": "Optional. Makes this a music scene: the colors come from the album cover of the media player, the preset is used until a cover is known. auto_start: never (only when selected), follow (when music starts while a music scene is active in another room) or always. By default it starts by itself only if no light of the scene is on; when_on: true starts it anyway."
+          "description": "Optional. Makes this a music scene: the colors come from the album cover of the media player (media_player: an entity, or \"any\" for whichever speaker is playing), the preset is used until a cover is known. auto_start: never (only when selected), follow (when music starts while a music scene is active in another room) or always. By default it starts by itself only if no light of the scene is on; when_on: true starts it anyway."
+        },
+        "saturation": {
+          "name": "Color intensity",
+          "description": "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
         }
       }
     },

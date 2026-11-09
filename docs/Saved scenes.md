@@ -81,3 +81,18 @@ data:
   light_brightness:
     light.living_room_strip: 20
 ```
+
+## Color intensity
+
+Every scene has a **Color intensity** slider (scene editor, below the brightness; also in the
+presets tab):
+
+| Setting | Lights |
+|---|---|
+| Middle (*as in preset*) | The colors of the preset, unchanged |
+| To the right, up to +100 % | More vivid, +100 % = fully saturated colors. White tones of a preset stay white |
+| To the left, down to −100 % | Paler, towards white |
+
+The hue never changes. It also works for dynamic scenes, gradient lamps, lights that join later and
+[music scenes](Music%20scenes.md) (on top of the cover colors). In services it is the field
+`saturation` (−100 … 100), see [Services](Services.md).

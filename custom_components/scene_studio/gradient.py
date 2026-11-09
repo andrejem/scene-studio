@@ -95,7 +95,9 @@ class GradientLights:
         if self._devices:
             dev_reg = dr.async_get(self.hass)
             ent_reg = er.async_get(self.hass)
-            for device in dev_reg.devices.values():
+            mqtt_devices = [device for mqtt_entry in self.hass.config_entries.async_entries("mqtt")
+                            for device in dr.async_entries_for_config_entry(dev_reg, mqtt_entry.entry_id)]
+            for device in mqtt_devices:
                 topic = None
                 for domain, ident in device.identifiers:
                     if domain != "mqtt":

@@ -81,6 +81,16 @@ apply_preset:
       description: "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
       selector:
         boolean:
+    saturation:
+      name: "Color intensity"
+      description: "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
+      selector:
+        number:
+          min: -100
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+          mode: slider
 
 get_dynamic_scenes:
   name: "Get dynamic scenes"
@@ -201,6 +211,16 @@ start_dynamic_scene:
       description: "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
       selector:
         boolean:
+    saturation:
+      name: "Color intensity"
+      description: "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
+      selector:
+        number:
+          min: -100
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+          mode: slider
 
 stop_dynamic_scene:
   name: "Stop dynamic scene"
@@ -358,9 +378,19 @@ save_scene:
       description: "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
       selector:
         boolean:
+    saturation:
+      name: "Color intensity"
+      description: "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
+      selector:
+        number:
+          min: -100
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+          mode: slider
     music:
       name: "Music scene"
-      description: "Optional. Makes this a music scene: the colors come from the album cover of the media player, the preset is used until a cover is known. auto_start: never (only when selected), follow (when music starts while a music scene is active in another room) or always. By default it starts by itself only if no light of the scene is on; when_on: true starts it anyway."
+      description: "Optional. Makes this a music scene: the colors come from the album cover of the media player (media_player: an entity, or \"any\" for whichever speaker is playing), the preset is used until a cover is known. auto_start: never (only when selected), follow (when music starts while a music scene is active in another room) or always. By default it starts by itself only if no light of the scene is on; when_on: true starts it anyway."
       example: '{"media_player": "media_player.living_room", "auto_start": "follow", "when_on": false}'
       selector:
         object:

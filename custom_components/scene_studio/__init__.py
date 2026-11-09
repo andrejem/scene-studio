@@ -51,6 +51,7 @@ APPLY_PRESET_SCHEMA = vol.Schema({
     vol.Optional(ATTR_OPTIONAL): cv.entity_ids,
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
     vol.Optional(ATTR_GRADIENT): cv.boolean,
+    vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
 })
 
 START_DYNAMIC_SCENE_SCHEMA = vol.Schema({
@@ -68,6 +69,7 @@ START_DYNAMIC_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_OPTIONAL): cv.entity_ids,
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
     vol.Optional(ATTR_GRADIENT): cv.boolean,
+    vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
 })
 
 
@@ -83,7 +85,8 @@ STOP_DYNAMIC_SCENE_SCHEMA = vol.Schema({
 })
 
 MUSIC_SCHEMA = vol.Schema({
-    vol.Optional("media_player"): cv.entity_domain("media_player"),  # default: speaker of the room
+    # default: speaker of the room; "any": whichever speaker is playing
+    vol.Optional("media_player"): vol.Any(MEDIA_PLAYER_ANY, cv.entity_domain("media_player")),
     vol.Optional("auto_start", default=AUTO_START_NEVER): vol.In(AUTO_START_OPTIONS),
     vol.Optional("when_on", default=False): cv.boolean,
 })
@@ -108,6 +111,7 @@ SAVE_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_OPTIONAL): cv.entity_ids,
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
     vol.Optional(ATTR_GRADIENT): cv.boolean,
+    vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
     vol.Optional("music"): MUSIC_SCHEMA,
 })
 
@@ -200,10 +204,12 @@ async def async_setup(hass, config):
             brightness_override,
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
             gradient=call.data.get(ATTR_GRADIENT, True),
+            saturation=call.data.get(ATTR_SATURATION),
         )
         d.optional_lights.register(
             optional_ids, light_entity_ids, preset_id, brightness_override,
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
+            saturation=call.data.get(ATTR_SATURATION),
         )
 
 
@@ -256,6 +262,7 @@ async def async_setup(hass, config):
             "shuffle": shuffle,
             ATTR_LIGHT_BRIGHTNESS: call.data.get(ATTR_LIGHT_BRIGHTNESS),
             ATTR_GRADIENT: call.data.get(ATTR_GRADIENT, True),
+            ATTR_SATURATION: call.data.get(ATTR_SATURATION),
         }
 
         range_attrs = (ATTR_INTERVAL_MIN, ATTR_INTERVAL_MAX, ATTR_TRANSITION_MIN, ATTR_TRANSITION_MAX)
@@ -269,6 +276,7 @@ async def async_setup(hass, config):
         d.optional_lights.register(
             optional_ids, light_entity_ids, preset_id, brightness_override, result["id"],
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
+            saturation=call.data.get(ATTR_SATURATION),
         )
         return result
 

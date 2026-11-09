@@ -11,6 +11,12 @@ A new cover means new colors. When the music stops, the lights go back to how th
   There is nothing else to switch on.
 - The colors come from the cover that is playing on the speaker of the scene's room (a Sonos if
   there is one). You can also choose another speaker.
+- The lights get the **hues** of the cover, but always **vivid**: a muted or pastel cover still
+  gives strong colors on the lamps (at least 80 % saturation). **Color intensity** in the scene
+  editor makes them paler or even stronger ([Saved scenes](Saved%20scenes.md#color-intensity)).
+- With the speaker *Any speaker that is playing* the scene uses the music of every room: in "any"
+  mode all Sonos speakers count (without Sonos: all media players), but only while they play music
+  with a cover – TV sound or line-in on a Sonos is ignored.
 - **No music, no change.** As long as no cover is known, the lights stay as they are.
 - When the music stops (or moves on to another room), the lights return to their state before the
   music scene after 30 seconds. If they were off, they turn off.
@@ -24,7 +30,8 @@ A new cover means new colors. When the music stops, the lights go back to how th
 3. Choose the lights under **Apply to**, usually the room.
 4. Under **Music**, check the settings:
    - **Speaker**: *Automatic* uses the speaker in the scene's room. Choose one if the room has
-     several or if the speaker is in another room.
+     several or if the speaker is in another room. *Any speaker that is playing* takes the cover of
+     whichever speaker plays – music in the kitchen colors the office too (see below).
    - **Start by itself when music starts**: *Never*, *Follow* or *Always* (see below).
    - **Also when a light is already on**: only shown for *Follow* and *Always*.
 5. **Once** or **Dynamic**, brightness and the lights of the scene work as in any other scene. With
@@ -46,9 +53,13 @@ as for every scene.
 | A cover without colors (black and white, grey, a radio logo) | The colors stay as they are |
 | A cover with only one or two colors | Close shades are added, so a dynamic scene still has something to change between |
 | A short pause, e.g. between two songs | Nothing |
+| Speaker *Any speaker that is playing*: music in another room | That cover. If several play, the one that started last |
+| Speaker *Any speaker that is playing*: that speaker stops, another one still plays | The scene follows the other one instead of ending |
 | The music stops or moves to another room | After 30 seconds the lights return to their state before the music scene (also *off*) |
 | You select another scene on these lights | The music scene ends, nothing is restored |
-| You turn all lights of the scene off | The music scene ends, nothing is restored |
+| You (or a motion light) turn all lights of the scene off | The music scene pauses, nothing is restored |
+| The lights come back on within 30 minutes (switch, motion light, app) while the music still plays | The music scene continues with the cover playing **now** |
+| They come back on and no music plays anymore, or another scene is started on them | The music scene is over |
 | Home Assistant restarts | Running music scenes are forgotten, like dynamic scenes. Select the scene again |
 
 The lights only return to their state before if the music scene actually changed them.
@@ -166,7 +177,7 @@ data:
   dynamic: true
   interval: 30
   music:
-    media_player: media_player.kitchen   # optional
+    media_player: media_player.kitchen   # optional; "any": whichever speaker is playing
     auto_start: follow                   # never (default), follow or always
     when_on: false                       # also when a light is already on
 ```
