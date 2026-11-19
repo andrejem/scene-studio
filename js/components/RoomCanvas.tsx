@@ -6,10 +6,37 @@ import {Translate} from "../i18n";
 import {areaName, entityAreaId} from "../tunables";
 
 export type Place = {x: number, y: number, x2?: number, y2?: number};
-type Plan = {key: string, id?: string, name: string, area_id?: string, lights: {[entityId: string]: Place}};
+type Plan = {
+    key: string, id?: string, name: string, area_id?: string, lights: {[entityId: string]: Place},
+    /** width / height of the plan (default landscape) and an own floor plan as background (JPEG data URL) */
+    aspect?: number, image?: string | null
+};
 type CanvasLight = {entity_id: string, name: string};
 
 const DIRECTIONS = [0, 45, 90, 135, 180, 225, 270, 315];
+const DEFAULT_ASPECT = 1.6;
+const FORMATS: Array<{aspect: number, icon: string, label: "spatial_landscape" | "spatial_square" | "spatial_portrait"}> = [
+    {aspect: 1.6, icon: "mdi:crop-landscape", label: "spatial_landscape"},
+    {aspect: 1, icon: "mdi:crop-square", label: "spatial_square"},
+    {aspect: 0.625, icon: "mdi:crop-portrait", label: "spatial_portrait"}
+];
+
+/** An own floor plan: made small enough to be kept with the plan. */
+const readFloorPlan = async (file: File): Promise<{image: string, aspect: number}> => {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#fff"; // transparent drawings on white
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return {
+        image: canvas.toDataURL("image/jpeg", 0.8),
+        aspect: Math.max(0.4, Math.min(2.5, canvas.width / canvas.height))
+    };
+};
 const clamp = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 1000) / 1000;
 const pct = (v: number) => (v * 100) + "%";
 
@@ -100,7 +127,9 @@ export const RoomCanvas: React.FunctionComponent<{
                     plan_id: plan.id,
                     name: plan.name,
                     area_id: plan.area_id ?? null,
-                    lights: plan.lights
+                    lights: plan.lights,
+                    aspect: plan.aspect ?? null,
+                    image: plan.image ?? null
                 });
                 if (!plan.id && result?.plan?.id) {
                     setPlans(plansRef.current.map(p => p.key === key ? {...p, id: result.plan.id} : p));
@@ -168,6 +197,44 @@ export const RoomCanvas: React.FunctionComponent<{
         setSelected(entity);
     };
 
+    /** The plan the format and the floor plan belong to: the one of the room, else the one with most lights. */
+    const mainPlan = (all: Array<Plan>): Plan | undefined => {
+        const room = all.find(p => areaId !== undefined && p.area_id === areaId);
+        if (room) {
+            return room;
+        }
+        const count = (p: Plan) => lights.filter(l => p.lights[l.entity_id]).length;
+        const best = [...all].sort((a, b) => count(b) - count(a))[0];
+        return best && count(best) > 0 ? best : all.find(p => (p.area_id ?? undefined) === areaId);
+    };
+
+    const changePlan = (values: {aspect?: number, image?: string | null}) => {
+        let all = plansRef.current;
+        let plan = mainPlan(all);
+        if (!plan) {
+            plan = {key: "new_" + (areaId ?? "home"), name: areaName(hass, areaId) || t("room_plan_home"), area_id: areaId, lights: {}};
+            all = [...all, plan];
+        }
+        const key = plan.key;
+        setPlans(all.map(p => p.key === key ? {...p, ...values} : p));
+        save(key);
+    };
+
+    const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) {
+            return;
+        }
+        try {
+            changePlan(await readFloorPlan(file));
+        } catch (err: any) {
+            setError(t("spatial_image_error"));
+        }
+    };
+
+    const main = mainPlan(plans);
+    const aspect = main?.aspect ?? DEFAULT_ASPECT;
     const placed = lights.filter(l => placeOf(l.entity_id));
     const unplaced = lights.filter(l => !placeOf(l.entity_id));
     const current = selected ? lights.find(l => l.entity_id === selected) : undefined;
@@ -175,8 +242,46 @@ export const RoomCanvas: React.FunctionComponent<{
 
     return (
         <div className={"sp-field sp-room-field"}>
-            <div className={"sp-room"} ref={box}>
+            {
+                canEdit &&
+                <div className={"sp-room-tools"}>
+                    {FORMATS.map(f => (
+                        <button
+                            key={f.label}
+                            type={"button"}
+                            className={"sp-icon-btn sp-room-format" + (Math.abs(aspect - f.aspect) < 0.01 ? " active" : "")}
+                            title={t(f.label)}
+                            aria-pressed={Math.abs(aspect - f.aspect) < 0.01}
+                            onClick={() => changePlan({aspect: f.aspect})}
+                        >
+                            <ha-icon icon={f.icon}/>
+                        </button>
+                    ))}
+                    <span className={"sp-grow"}/>
+                    <label className={"sp-icon-btn sp-room-upload"} title={t("spatial_image")}>
+                        <ha-icon icon={"mdi:floor-plan"}/>
+                        <input type={"file"} accept={"image/*"} hidden onChange={upload}/>
+                    </label>
+                    {
+                        main?.image &&
+                        <button
+                            type={"button"}
+                            className={"sp-icon-btn sp-room-image-remove"}
+                            title={t("spatial_image_remove")}
+                            onClick={() => changePlan({image: null})}
+                        >
+                            <ha-icon icon={"mdi:image-off-outline"}/>
+                        </button>
+                    }
+                </div>
+            }
+            <div
+                className={"sp-room"}
+                ref={box}
+                style={{aspectRatio: String(aspect), maxWidth: aspect < 1.2 ? Math.round(aspect * 440) + "px" : undefined}}
+            >
                 {image && <div className={"sp-room-img"} style={{backgroundImage: `url("${image}")`}}/>}
+                {main?.image && <div className={"sp-room-plan"} style={{backgroundImage: `url("${main.image}")`}}/>}
                 {!image && <div className={"sp-room-note sp-secondary sp-small"}>{t("spatial_music")}</div>}
                 <svg className={"sp-room-lines"} viewBox={"0 0 100 100"} preserveAspectRatio={"none"}>
                     {placed.map(l => {

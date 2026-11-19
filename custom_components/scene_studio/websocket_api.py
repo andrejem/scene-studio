@@ -82,6 +82,8 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
         vol.Required("name"): cv.string,
         vol.Optional("area_id"): vol.Any(None, cv.string),
         vol.Required("lights"): {cv.entity_id: dict},
+        vol.Optional("aspect"): vol.Any(None, vol.Coerce(float)),
+        vol.Optional("image"): vol.Any(None, cv.string),
     })
     @websocket_api.require_admin
     @websocket_api.async_response
@@ -90,6 +92,7 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
         try:
             plan = await data.room_plans.async_save_plan({
                 "id": msg.get("plan_id"), "name": msg["name"], "area_id": msg.get("area_id"), "lights": msg["lights"],
+                "aspect": msg.get("aspect"), "image": msg.get("image"),
             })
         except (PlanError, KeyError, TypeError, ValueError) as err:
             connection.send_error(msg["id"], "invalid_plan", str(err) if isinstance(err, PlanError) else "Invalid plan")

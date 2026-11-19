@@ -39,7 +39,7 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     A cover without colors gives `WHITE` (`neutral`: `white` / `dark`); a dark one adds `dim` to the
     runtime preset, which `apply_preset` multiplies into the brightness until the next cover.
   - `spatial.py` - room canvas (4.0): room plans (`RoomPlans`, store `scene_studio.room_plans`: places of the
-    lights, x/y 0..1 on a 16:10 plan, optional x2/y2 for strips) and `assign()`, which gives every placed
+    lights, x/y 0..1, optional x2/y2 for strips; `aspect` width/height of the plan, default 1.6; `image` own floor plan as JPEG data URL) and `assign()`, which gives every placed
     light the preset color that belongs to the picture at its place. `apply_preset(spatial=...)` uses it;
     dynamic scenes add `since` and `period` so the picture moves (`shift_of`). Music scenes put the cover
     into the runtime preset as `field`. Without `spatial` or without places nothing changes.

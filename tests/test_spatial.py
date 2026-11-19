@@ -135,7 +135,9 @@ async def test_room_plans_are_saved_and_used(hass: HomeAssistant, monkeypatch, u
     async def field_for(hass, preset):
         return _field(last, first)
 
-    monkeypatch.setattr(presets, "async_field_for", field_for)
+    from custom_components.scene_studio import spatial as spatial_module
+
+    monkeypatch.setattr(spatial_module, "async_field_for", field_for)
     await hass.services.async_call("scene_studio", "apply_preset", {
         "preset_id": PRESET, "targets": targets, "spatial": {}}, blocking=True)
     await hass.async_block_till_done()
@@ -168,18 +170,49 @@ async def test_dynamic_scene_moves_the_picture_and_saved_scenes_keep_the_setting
     assert saved["scene"]["spatial"] == {"direction": 45}
 
 
-def test_the_picture_of_a_preset_becomes_a_field():
+def test_the_picture_of_a_preset_becomes_a_field_and_is_cut_to_the_plan():
     import os
 
-    from custom_components.scene_studio.spatial import FIELD_SIZE, _field_from_image, field_from_bytes
+    from custom_components.scene_studio.spatial import FIELD_SIDE, _field_from_image, field_from_bytes, fit
 
     assets = os.path.join(os.path.dirname(__file__), "..", "custom_components", "scene_studio", "assets")
     path = os.path.join(assets, f"{PRESET}.jpeg")
     field = _field_from_image(path)
-    assert len(field) == FIELD_SIZE[1] and len(field[0]) == FIELD_SIZE[0] and len(field[0][0]) == 3
+    assert max(len(field), len(field[0])) == FIELD_SIDE and len(field[0][0]) == 3
     with open(path, "rb") as file:
         assert field_from_bytes(file.read()) == field
     assert _field_from_image(b"no picture") is None
+
+    square = [[(x, y, 0) for x in range(30)] for y in range(30)]
+    wide, tall = fit(square, 2.0), fit(square, 0.5)
+    assert (len(wide), len(wide[0])) == (15, 30) and wide[0][0] == (0, 7, 0)   # the middle rows
+    assert (len(tall), len(tall[0])) == (30, 15) and tall[0][0] == (7, 0, 0)   # the middle columns
+    assert fit(square, 1.0) == square and fit(None, 1.6) is None
+
+
+async def test_a_plan_has_a_format_and_an_own_floor_plan(hass: HomeAssistant, monkeypatch, userdata, hass_ws_client):
+    await _lights(hass, monkeypatch)
+    client = await hass_ws_client(hass)
+    image = "data:image/jpeg;base64,AAAA"
+    await client.send_json_auto_id({
+        "type": "scene_studio/save_room_plan", "name": "Corridor", "aspect": 0.1, "image": image,
+        "lights": {"light.left": {"x": 0.5, "y": 0.1}},
+    })
+    plan = (await client.receive_json())["result"]["plan"]
+    assert plan["aspect"] == 0.4 and plan["image"] == image   # the format stays within its limits
+    assert runtime(hass).room_plans.place_of("light.left")["aspect"] == 0.4
+    assert runtime(hass).room_plans.place_of("light.right") is None
+
+    await client.send_json_auto_id({
+        "type": "scene_studio/save_room_plan", "plan_id": plan["id"], "name": "Corridor", "aspect": 1.6,
+        "image": None, "lights": {"light.left": {"x": 0.5, "y": 0.1}},
+    })
+    plan = (await client.receive_json())["result"]["plan"]
+    assert "aspect" not in plan and "image" not in plan   # landscape without floor plan is the default
+    await client.send_json_auto_id({
+        "type": "scene_studio/save_room_plan", "name": "Bad", "image": "data:text/html;base64,AAAA", "lights": {},
+    })
+    assert not (await client.receive_json())["success"]
 
 
 async def test_a_music_scene_brings_the_cover_as_its_picture(hass: HomeAssistant):

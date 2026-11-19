@@ -12,7 +12,6 @@ from .util import light_brightness_for, resolve_entity_ids
 from .const import DOMAIN
 from .gradient import gradient_colors
 from .data import find_data
-from .spatial import assign, async_field_for, shift_of
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,19 +76,12 @@ async def apply_preset(
     placed = {}
     runtime = find_data(hass)
     if spatial and len(preset_colors) > 1 and runtime is not None:
-        places = {}
-        for entity_id in light_entity_ids:
-            place = runtime.room_plans.place_of(entity_id)
-            if place is not None:
-                places[entity_id] = place
-        if places:
-            field = await async_field_for(hass, preset_data)
-            own = {}
-            for entity_id in places if pools else ():
-                pool = pools.get(_role_for(hass, entity_id, roles))
-                if pool:
-                    own[entity_id] = pool
-            placed = assign(field, places, preset_colors, shift_of(spatial), own)
+        own = {}
+        for entity_id in light_entity_ids if pools else ():
+            pool = pools.get(_role_for(hass, entity_id, roles))
+            if pool:
+                own[entity_id] = pool
+        placed = await runtime.room_plans.async_assign(preset_data, light_entity_ids, preset_colors, spatial, own)
 
     tasks = []
 

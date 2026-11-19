@@ -139,6 +139,8 @@ button { font: inherit; color: inherit; }
 .sp-room {
     position: relative;
     aspect-ratio: 16 / 10;
+    width: 100%;
+    margin: 0 auto;
     border-radius: var(--sp-radius);
     border: 1px solid var(--sp-line);
     background: #14161c;
@@ -147,6 +149,10 @@ button { font: inherit; color: inherit; }
     user-select: none;
 }
 .sp-room-img { position: absolute; inset: -8%; background-size: cover; background-position: center; filter: blur(14px) saturate(1.3); opacity: 0.75; }
+.sp-room-plan { position: absolute; inset: 0; background-size: 100% 100%; mix-blend-mode: multiply; opacity: 0.9; }
+.sp-room-tools { display: flex; align-items: center; gap: 2px; }
+.sp-room-tools .sp-icon-btn { width: 36px; height: 36px; color: var(--sp-text-dim, var(--secondary-text-color)); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.sp-room-tools .sp-icon-btn.active { color: var(--sp-accent); }
 .sp-room-note { position: absolute; left: 12px; bottom: 10px; color: rgba(255, 255, 255, 0.6); }
 .sp-room-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .sp-room-lines line { stroke: rgba(255, 255, 255, 0.9); stroke-width: 3; stroke-linecap: round; }

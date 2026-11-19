@@ -217,6 +217,12 @@ const EN = {
     spatial_direction: "The picture moves",
     spatial_music: "The album cover lies over the room",
     room_plan_home: "Home",
+    spatial_landscape: "Landscape",
+    spatial_square: "Square",
+    spatial_portrait: "Portrait",
+    spatial_image: "Own floor plan as background",
+    spatial_image_remove: "Remove the floor plan",
+    spatial_image_error: "This picture cannot be read",
     gradient_badge: "gradient",
 };
 
@@ -439,6 +445,12 @@ const DE: {[K in Key]: string} = {
     spatial_direction: "Das Bild wandert",
     spatial_music: "Das Albumcover liegt über dem Raum",
     room_plan_home: "Zuhause",
+    spatial_landscape: "Querformat",
+    spatial_square: "Quadratisch",
+    spatial_portrait: "Hochformat",
+    spatial_image: "Eigener Grundriss als Hintergrund",
+    spatial_image_remove: "Grundriss entfernen",
+    spatial_image_error: "Dieses Bild kann nicht gelesen werden",
     gradient_badge: "Verlauf",
 };
 

@@ -26,8 +26,14 @@ _LOGGER = logging.getLogger(__name__)
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}.room_plans"
 
-# the plan is a 16:10 area, the picture is cut to it; small is enough, the colors are smoothed anyway
-FIELD_SIZE = (32, 20)
+# the picture as a field of colors: its longer side in cells; small is enough, the colors are smoothed
+FIELD_SIDE = 32
+# width / height of a plan: landscape by default, any room from a narrow corridor to a long hall
+DEFAULT_ASPECT = 1.6
+MIN_ASPECT, MAX_ASPECT = 0.4, 2.5
+# own floor plan as background of a plan: a small JPEG, kept with the plan
+IMAGE_PREFIX = "data:image/jpeg;base64,"
+MAX_IMAGE_LENGTH = 600_000
 # a dynamic scene moves the picture once through the room in this many color changes
 STEPS_PER_PASS = 10
 STRIP_POINTS = 5
@@ -84,6 +90,15 @@ class RoomPlans:
         plan = {"id": plan_id, "name": name, "lights": clean_lights(data.get("lights"))}
         if data.get("area_id"):
             plan["area_id"] = data["area_id"]
+        if data.get("aspect") is not None:
+            aspect = round(max(MIN_ASPECT, min(MAX_ASPECT, float(data["aspect"]))), 3)
+            if aspect != DEFAULT_ASPECT:
+                plan["aspect"] = aspect
+        image = data.get("image")
+        if image:
+            if not isinstance(image, str) or not image.startswith(IMAGE_PREFIX) or len(image) > MAX_IMAGE_LENGTH:
+                raise PlanError("The picture of the plan must be a JPEG of at most 400 kB")
+            plan["image"] = image
         self._plans[plan_id] = plan
         await self._async_save()
         return plan
@@ -96,27 +111,43 @@ class RoomPlans:
         return True
 
     def place_of(self, entity_id: str) -> dict | None:
-        """Place of a light: its own, or the one of a group it belongs to (or that it consists of)."""
+        """Place of a light with the "aspect" of its plan: its own place, or the one of a group it
+        belongs to (or that it consists of)."""
         for plan in self._plans.values():
             place = plan["lights"].get(entity_id)
             if place is not None:
-                return place
+                return {**place, "aspect": plan.get("aspect", DEFAULT_ASPECT)}
         for plan in self._plans.values():
             for key, place in plan["lights"].items():
                 if entity_id in resolve_entity_ids(self.hass, key):
-                    return place
+                    return {**place, "aspect": plan.get("aspect", DEFAULT_ASPECT)}
         members = [m for m in resolve_entity_ids(self.hass, entity_id) if m != entity_id]
-        places = [p for p in (self._own(m) for m in members) if p is not None]
+        places = [p for p in (self.place_of(m) for m in members) if p is not None]
         if places:
             # a group used as one light sits in the middle of its lights
-            return {"x": sum(p["x"] for p in places) / len(places), "y": sum(p["y"] for p in places) / len(places)}
+            return {
+                "x": sum(p["x"] for p in places) / len(places),
+                "y": sum(p["y"] for p in places) / len(places),
+                "aspect": places[0]["aspect"],
+            }
         return None
 
-    def _own(self, entity_id):
-        for plan in self._plans.values():
-            if entity_id in plan["lights"]:
-                return plan["lights"][entity_id]
-        return None
+    async def async_assign(self, preset: dict, entity_ids: list, colors: list, spatial: dict, own: dict | None = None) -> dict:
+        """Colors by place for the lights of a scene that have one, see assign(). The picture is laid
+        over every plan in its own format."""
+        by_aspect: dict = {}
+        for entity_id in entity_ids:
+            place = self.place_of(entity_id)
+            if place is not None:
+                by_aspect.setdefault(place["aspect"], {})[entity_id] = place
+        if not by_aspect:
+            return {}
+        field = await async_field_for(self.hass, preset)
+        result = {}
+        for aspect, places in by_aspect.items():
+            pools = {e: own[e] for e in places if own and e in own}
+            result.update(assign(fit(field, aspect), places, colors, shift_of(spatial), pools))
+        return result
 
 
 # --- the picture of a preset as a small field of colors ------------------------------------------------
@@ -126,17 +157,31 @@ def _field_from_image(source) -> list | None:
     try:
         import io
 
-        from PIL import Image, ImageFilter, ImageOps
+        from PIL import Image, ImageFilter
 
         image = Image.open(io.BytesIO(source) if isinstance(source, (bytes, bytearray)) else source).convert("RGB")
-        image = ImageOps.fit(image, (FIELD_SIZE[0] * 4, FIELD_SIZE[1] * 4)).filter(ImageFilter.GaussianBlur(4))
-        image = image.resize(FIELD_SIZE)
-        pixels = list(image.getdata())
-    except Exception as err:  # noqa: BLE001 - without picture the scene works as before
+        image.thumbnail((FIELD_SIDE * 4, FIELD_SIDE * 4))
+        image = image.filter(ImageFilter.GaussianBlur(4))
+        width, height = max(1, round(image.width / 4)), max(1, round(image.height / 4))
+        pixels = list(image.resize((width, height)).getdata())
+    except Exception as err:  # noqa: BLE001 - without picture the colors run from left to right
         _LOGGER.debug("Picture for the room canvas cannot be read: %s", err)
         return None
-    width = FIELD_SIZE[0]
-    return [pixels[row * width:(row + 1) * width] for row in range(FIELD_SIZE[1])]
+    return [pixels[row * width:(row + 1) * width] for row in range(height)]
+
+
+def fit(field, aspect: float):
+    """The part of the picture that covers a plan of this format (cut in the middle, like the panel shows it)."""
+    if not field:
+        return field
+    height, width = len(field), len(field[0])
+    if aspect > width / height:
+        rows = max(1, min(height, round(width / aspect)))
+        top = (height - rows) // 2
+        return field[top:top + rows]
+    cols = max(1, min(width, round(height * aspect)))
+    left = (width - cols) // 2
+    return [row[left:left + cols] for row in field]
 
 
 def field_from_bytes(data: bytes) -> list | None:
@@ -159,7 +204,7 @@ def _image_path(preset: dict) -> str | None:
 
 
 async def async_field_for(hass: HomeAssistant, preset: dict) -> list | None:
-    """The picture of the preset as field; None if it has none (then nothing is spatial)."""
+    """The picture of the preset as field in its own format (see fit); None if it has none."""
     if preset.get("field"):
         return preset["field"]  # runtime presets (music) bring their own
     key = (preset.get("id"), preset.get("img"))

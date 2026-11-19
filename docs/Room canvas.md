@@ -22,11 +22,17 @@ the dark blue on the other – every time the scene starts.
 2. The plan shows the picture of the preset. Below it are the lights that have no place yet: tap
    a light to put it on the plan, then drag it to where it is in the room. The plan is the room seen
    from above; which wall is at the top is up to you, as long as it is the same for all lights.
-3. A **light strip** or another long light: tap the light on the plan, then the strip symbol. It
+3. Choose the **format** of the plan with the symbols above it: landscape, square or portrait, so a
+   narrow corridor or a balcony is not distorted. Or load your **own floor plan** (a drawing or a
+   photo) with the floor plan symbol: the plan takes its format, and you place the lights right on
+   it. The picture of the preset is cut to the format of the plan. A room with corners or niches
+   needs no special form: the plan is the rectangle around the room.
+4. A **light strip** or another long light: tap the light on the plan, then the strip symbol. It
    gets a second handle for its other end. Gradient lamps then show the colors along their length.
-4. **Try** shows the result on the lights. Save the scene.
+5. **Try** shows the result on the lights. Save the scene.
 
-The places are saved as soon as a light is dropped, not with the scene: they belong to the room.
+The places, the format and the floor plan are saved at once, not with the scene: they belong to the
+room, and every scene of the room uses them.
 The cross takes a light off the plan again. Placing lights needs an administrator.
 
 ## How the colors are chosen
