@@ -162,9 +162,9 @@ export const RoomCanvas: React.FunctionComponent<{
     };
 
     const placeNew = (entity: string) => {
-        // next to each other in the middle, so a new light never hides another one
+        // in rows with room for the names, so a new light never hides another one
         const n = lights.filter(l => placeOf(l.entity_id)).length;
-        save(change(entity, {x: clamp(0.2 + (n % 5) * 0.15), y: clamp(0.5 + (Math.floor(n / 5) % 3) * 0.14)}));
+        save(change(entity, {x: clamp(0.14 + (n % 4) * 0.24), y: clamp(0.28 + (Math.floor(n / 4) % 3) * 0.24)}));
         setSelected(entity);
     };
 

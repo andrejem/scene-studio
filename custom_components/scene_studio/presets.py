@@ -73,7 +73,7 @@ async def apply_preset(
     role_index = {}
 
     # Room canvas (4.0): lights with a place on a room plan get the color the picture has there.
-    # Without "spatial", without places or without picture nothing changes.
+    # Without "spatial" or without places nothing changes.
     placed = {}
     runtime = find_data(hass)
     if spatial and len(preset_colors) > 1 and runtime is not None:

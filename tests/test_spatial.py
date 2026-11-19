@@ -64,7 +64,26 @@ def test_a_strip_gets_the_colors_along_it_and_own_colors_are_kept():
     result = assign(field, places, [RED, BLUE, GREEN], pools={"light.main": [GREEN]})
     assert result["light.strip"]["strip"][0] == RED and result["light.strip"]["strip"][-1] == BLUE
     assert result["light.main"]["color"] == GREEN  # only its own colors, even if another one is closer
-    assert assign(None, places, [RED]) == {} and assign(field, {}, [RED]) == {}
+    assert assign(field, {}, [RED]) == {}
+
+
+def test_without_picture_the_colors_run_from_left_to_right():
+    from custom_components.scene_studio.spatial import assign
+
+    places = {f"light.l{i}": {"x": 0.1 + i * 0.4, "y": 0.5} for i in range(3)}
+    result = assign(None, places, [GREEN, RED, BLUE])
+    assert [result[f"light.l{i}"]["color"] for i in range(3)] == [GREEN, RED, BLUE]
+
+
+def test_a_picture_with_colors_close_together_still_uses_all_colors():
+    from custom_components.scene_studio.spatial import assign
+
+    # blue on the left turning a little greener to the right: far from the preset colors, but ordered
+    field = [[(40, 90 + x * 3, 200) for x in range(32)] for _ in range(20)]
+    places = {f"light.l{i}": {"x": 0.1 + i * 0.4, "y": 0.5} for i in range(3)}
+    result = assign(field, places, [RED, GREEN, BLUE])
+    assert len({v["color"] for v in result.values()}) == 3
+    assert result["light.l0"]["color"] == BLUE and result["light.l2"]["color"] == GREEN
 
 
 async def _lights(hass, monkeypatch):
@@ -105,10 +124,12 @@ async def test_room_plans_are_saved_and_used(hass: HomeAssistant, monkeypatch, u
 
     preset = next(p for p in PRESET_DATA["presets"] if p["id"] == PRESET)
     colors = [(c["x"], c["y"]) for c in preset["lights"]]
-    from custom_components.scene_studio.spatial import _chroma_xy, _distance
+    import math
+
+    from custom_components.scene_studio.spatial import _chroma_xy
 
     # the two colors of the preset that differ most
-    a, b = max(((a, b) for a in colors for b in colors), key=lambda p: _distance(_chroma_xy(p[0]), _chroma_xy(p[1])))
+    a, b = max(((a, b) for a in colors for b in colors), key=lambda p: math.dist(_chroma_xy(p[0]), _chroma_xy(p[1])))
     first, last = color_util.color_xy_to_RGB(*a), color_util.color_xy_to_RGB(*b)
 
     async def field_for(hass, preset):

@@ -1,11 +1,12 @@
 # Added by andrejem (2026): room canvas (4.0). The user places the lights of a room on a plan once.
 # A scene with "spatial" lays the picture of its preset over the plan: every light gets the preset
 # color that is closest to the picture at its place, so the colors are spread through the room like
-# in the picture instead of by chance. Dynamic scenes move the picture slowly through the room.
+# in the picture instead of by chance (see assign). Dynamic scenes move the picture slowly through the room.
 # Lights without a place and scenes without "spatial" behave as before.
 
 from __future__ import annotations
 
+import bisect
 import colorsys
 import logging
 import math
@@ -193,8 +194,30 @@ def _chroma_xy(xy) -> tuple[float, float]:
     return _chroma_rgb(color_util.color_xy_to_RGB(xy[0], xy[1]))
 
 
-def _distance(a, b) -> float:
-    return math.hypot(a[0] - b[0], a[1] - b[1])
+def _ranks(field):
+    """Where each cell of the picture stands between its two most different colors, 0..1.
+
+    The colors of a picture are often close together (a blue-green aurora, a warm sunset). Comparing
+    them one by one with the preset colors would give most lights the same color. So only the order
+    counts: the cells are sorted along the direction in which the colors of the picture differ most,
+    and a cell is described by its rank in that order. Returns (ranks as rows, axis, center) or None
+    for a picture in one color.
+    """
+    cells = [_chroma_rgb(pixel) for row in field for pixel in row]
+    n = len(cells)
+    mx, my = sum(c[0] for c in cells) / n, sum(c[1] for c in cells) / n
+    cxx = sum((c[0] - mx) ** 2 for c in cells) / n
+    cyy = sum((c[1] - my) ** 2 for c in cells) / n
+    cxy = sum((c[0] - mx) * (c[1] - my) for c in cells) / n
+    if cxx + cyy < 1e-4:
+        return None
+    angle = 0.5 * math.atan2(2 * cxy, cxx - cyy)
+    axis = (math.cos(angle), math.sin(angle))
+    scalars = [(c[0] - mx) * axis[0] + (c[1] - my) * axis[1] for c in cells]
+    order = sorted(scalars)
+    ranks = [(bisect.bisect_left(order, v) + bisect.bisect_right(order, v)) / (2 * n) for v in scalars]
+    width = len(field[0])
+    return [ranks[i:i + width] for i in range(0, n, width)], axis, (mx, my)
 
 
 def shift_of(spatial: dict | None, now: float | None = None) -> tuple[float, float]:
@@ -207,47 +230,88 @@ def shift_of(spatial: dict | None, now: float | None = None) -> tuple[float, flo
 
 
 def assign(field, places: dict, colors: list, shift=(0.0, 0.0), pools: dict | None = None) -> dict:
-    """Color per light: the preset color closest to the picture at its place.
+    """Color per light by its place: {entity_id: {"color": xy, "strip": [xy, ...]}}.
 
-    ``places`` is {entity_id: place}; ``pools`` optionally limits the colors of single lights
-    ({entity_id: colors}, main and accent lights of music scenes). All colors of the preset stay in
-    use: none is given to more lights than its share, so a picture with one dominant color does not
-    turn the whole room into it. Lights with a strip (x2, y2) also get "strip": colors along it.
+    The preset colors are put in the order in which the picture changes its colors, each with the
+    share it has in the preset (presets repeat colors that should dominate). A light gets the color
+    that belongs to the picture at its place. All colors stay in use as far as there are lights, and
+    none gets more lights than its share. Without picture, or with a picture in one color, the
+    colors run from left to right in the order of the preset.
+
+    ``places`` is {entity_id: place}; ``pools`` limits the colors of single lights ({entity_id:
+    colors}, main and accent lights of music scenes). Lights with a strip (x2, y2) also get the
+    colors along it.
     """
-    if not field or not places or not colors:
+    if not places or not colors:
         return {}
-    chroma = {tuple(c): _chroma_xy(c) for c in colors}
-    for pool in (pools or {}).values():
-        for c in pool:
-            chroma.setdefault(tuple(c), _chroma_xy(c))
+    colors = [tuple(c) for c in colors]
+    distinct = list(dict.fromkeys(colors))
+    ranked = _ranks(field) if field else None
+
+    if ranked is not None:
+        ranks, axis, center = ranked
+
+        def along(color):
+            chroma = _chroma_xy(color)
+            return (chroma[0] - center[0]) * axis[0] + (chroma[1] - center[1]) * axis[1]
+
+        def rank_at(x, y):
+            return _sample(ranks, x - shift[0], y - shift[1])
+
+        distinct.sort(key=along)
+    else:
+        along = None
+
+        def rank_at(x, y):
+            return _mirror(x - shift[0])
+
+    # every color has its part of 0..1, as wide as its share of the preset
+    position, start = {}, 0.0
+    for color in distinct:
+        width = colors.count(color) / len(colors)
+        position[color] = start + width / 2
+        start += width
+
+    def position_of(color):
+        if color in position:
+            return position[color]
+        if along is None:
+            return 0.5
+        # a color that is not in the preset (own colors of a light): between its neighbours
+        value = along(color)
+        before = [c for c in distinct if along(c) <= value]
+        after = [c for c in distinct if along(c) > value]
+        if not before:
+            return 0.0
+        if not after:
+            return 1.0
+        low, high = before[-1], after[0]
+        span = along(high) - along(low)
+        part = (value - along(low)) / span if span else 0.5
+        return position[low] + (position[high] - position[low]) * part
 
     def options(entity_id):
-        return [tuple(c) for c in ((pools or {}).get(entity_id) or colors)]
+        return [tuple(c) for c in ((pools or {}).get(entity_id) or distinct)]
 
     pairs = []
     for entity_id, place in places.items():
         x, y = place["x"], place["y"]
         if place.get("x2") is not None:
             x, y = (x + place["x2"]) / 2, (y + place["y2"]) / 2
-        here = _chroma_rgb(_sample(field, x - shift[0], y - shift[1]))
+        here = rank_at(x, y)
         for color in options(entity_id):
-            pairs.append((_distance(here, chroma[color]), entity_id, color))
+            pairs.append((abs(here - position_of(color)), entity_id, color))
     pairs.sort(key=lambda p: p[0])
 
-    # share of a color: as often as it is in the preset (presets repeat colors that should dominate)
-    counts: dict = {}
-    for c in colors:
-        counts[tuple(c)] = counts.get(tuple(c), 0) + 1
-    share = {c: math.ceil(len(places) * n / len(colors)) for c, n in counts.items()}
-    used: dict = {}
     result: dict = {}
-    for _dist, entity_id, color in pairs:
-        if entity_id in result or used.get(color, 0) >= share.get(color, len(places)):
-            continue
-        result[entity_id] = {"color": color}
-        used[color] = used.get(color, 0) + 1
-    for _dist, entity_id, color in pairs:  # lights left over (own pools can use up their share)
-        result.setdefault(entity_id, {"color": color})
+    used: dict = {}
+    share = {c: math.ceil(len(places) * colors.count(c) / len(colors)) for c in distinct}
+    # first every color once, then up to its share, then whatever is left (own colors of a light)
+    for limit in (lambda c: 1, lambda c: share.get(c, len(places)), lambda c: len(places)):
+        for _cost, entity_id, color in pairs:
+            if entity_id not in result and used.get(color, 0) < limit(color):
+                result[entity_id] = {"color": color}
+                used[color] = used.get(color, 0) + 1
 
     for entity_id, place in places.items():
         if place.get("x2") is None or entity_id not in result:
@@ -255,11 +319,7 @@ def assign(field, places: dict, colors: list, shift=(0.0, 0.0), pools: dict | No
         strip = []
         for i in range(STRIP_POINTS):
             t = i / (STRIP_POINTS - 1)
-            here = _chroma_rgb(_sample(
-                field,
-                place["x"] + (place["x2"] - place["x"]) * t - shift[0],
-                place["y"] + (place["y2"] - place["y"]) * t - shift[1],
-            ))
-            strip.append(min(options(entity_id), key=lambda c: _distance(here, chroma[c])))
+            here = rank_at(place["x"] + (place["x2"] - place["x"]) * t, place["y"] + (place["y2"] - place["y"]) * t)
+            strip.append(min(options(entity_id), key=lambda c: abs(here - position_of(c))))
         result[entity_id]["strip"] = strip
     return result

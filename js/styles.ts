@@ -172,7 +172,7 @@ button { font: inherit; color: inherit; }
     top: 24px;
     left: 50%;
     transform: translateX(-50%);
-    max-width: 110px;
+    max-width: 92px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
