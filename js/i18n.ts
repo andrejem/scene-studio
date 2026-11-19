@@ -209,6 +209,14 @@ const EN = {
     daytime_rule_empty: "Each line needs the sun or a time.",
     gradient_switch: "All colors on gradient lamps",
     gradient_help: "Gradient lamps (e.g. Hue Signe, Play gradient) show all colors of the preset as a gradient. Off: one color like any other lamp.",
+    spatial_switch: "Colors by place in the room",
+    spatial_help: "Each light takes the color the picture has at its place.",
+    spatial_unplaced: "Not placed yet",
+    spatial_strip: "Long light (light strip)",
+    spatial_remove: "Take off the plan",
+    spatial_direction: "The picture moves",
+    spatial_music: "The album cover lies over the room",
+    room_plan_home: "Home",
     gradient_badge: "gradient",
 };
 
@@ -423,6 +431,14 @@ const DE: {[K in Key]: string} = {
     daytime_rule_empty: "Jede Zeile braucht die Sonne oder eine Uhrzeit.",
     gradient_switch: "Alle Farben auf Verlaufslampen",
     gradient_help: "Verlaufslampen (z. B. Hue Signe, Play Gradient) zeigen alle Farben der Vorlage als Verlauf. Aus: eine Farbe wie jede andere Lampe.",
+    spatial_switch: "Farben nach Platz im Raum",
+    spatial_help: "Jede Lampe nimmt die Farbe, die das Bild an ihrem Platz hat.",
+    spatial_unplaced: "Noch ohne Platz",
+    spatial_strip: "Lange Lampe (Lichtband)",
+    spatial_remove: "Vom Plan nehmen",
+    spatial_direction: "Das Bild wandert",
+    spatial_music: "Das Albumcover liegt über dem Raum",
+    room_plan_home: "Zuhause",
     gradient_badge: "Verlauf",
 };
 

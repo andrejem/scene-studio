@@ -241,52 +241,52 @@ export const ScenesPage: React.FunctionComponent<{
                         {arranging === g.key && <div className={"sp-secondary sp-small sp-hint"}>{t("arrange_hint")}</div>}
                         {
                             arranging === g.key ?
-                        <div className={"sp-grid small arranging"}>
-                            {draft.map(id => g.scenes.find(({scene}) => scene.id === id)).filter(Boolean).map(entry => {
-                                const scene = entry!.scene;
-                                return <div
-                                    key={"arr_" + scene.id}
-                                    data-scene-id={scene.id}
-                                    className={"sp-drag" + (dragId.current === scene.id ? " dragging" : "")}
-                                    onPointerDown={(e) => onPointerDown(e, scene.id)}
-                                    onPointerMove={onPointerMove}
-                                    onPointerUp={onPointerUp}
-                                    onPointerCancel={onPointerUp}
-                                >
-                                    <PresetTile
+                                <div className={"sp-grid small arranging"}>
+                                    {draft.map(id => g.scenes.find(({scene}) => scene.id === id)).filter(Boolean).map(entry => {
+                                        const scene = entry!.scene;
+                                        return <div
+                                            key={"arr_" + scene.id}
+                                            data-scene-id={scene.id}
+                                            className={"sp-drag" + (dragId.current === scene.id ? " dragging" : "")}
+                                            onPointerDown={(e) => onPointerDown(e, scene.id)}
+                                            onPointerMove={onPointerMove}
+                                            onPointerUp={onPointerUp}
+                                            onPointerCancel={onPointerUp}
+                                        >
+                                            <PresetTile
+                                                small
+                                                id={scene.id}
+                                                name={stripRoomName(scene.name, groupName(g))}
+                                                imgSrc={presetImage(presetMap[scene.preset_id])}
+                                            />
+                                        </div>;
+                                    })}
+                                </div> :
+                                <div className={"sp-grid small"}>
+                                    {g.scenes.map(({scene}) => (
+                                        <PresetTile
+                                            small
+                                            key={"scene_" + scene.id}
+                                            id={scene.id}
+                                            name={stripRoomName(scene.name, g.key === NO_ROOM ? "" : g.name)}
+                                            title={scene.name}
+                                            imgSrc={presetImage(presetMap[scene.preset_id])}
+                                            onClick={(id) => onActivate(id)}
+                                            actionIcon={"mdi:pencil"}
+                                            actionLabel={t("edit")}
+                                            onActionClick={() => onEdit(scene)}
+                                            badge={scene.preset_id === MUSIC_PRESET_ID ? t("music_badge") : scene.preset_id === DAYTIME_PRESET_ID ? t("daytime_badge") : (scene.dynamic ? t("badge_dynamic") : undefined)}
+                                            badgeIcon={scene.preset_id === MUSIC_PRESET_ID ? "mdi:music-note" : scene.preset_id === DAYTIME_PRESET_ID ? "mdi:theme-light-dark" : undefined}
+                                            active={activeIds.has(scene.id)}
+                                        />
+                                    ))}
+                                    <NewTile
                                         small
-                                        id={scene.id}
-                                        name={stripRoomName(scene.name, groupName(g))}
-                                        imgSrc={presetImage(presetMap[scene.preset_id])}
+                                        label={t("new_scene")}
+                                        icon={"mdi:plus"}
+                                        onClick={() => onNew(g.key === NO_ROOM ? undefined : g.key)}
                                     />
-                                </div>;
-                            })}
-                        </div> :
-                        <div className={"sp-grid small"}>
-                            {g.scenes.map(({scene}) => (
-                                <PresetTile
-                                    small
-                                    key={"scene_" + scene.id}
-                                    id={scene.id}
-                                    name={stripRoomName(scene.name, g.key === NO_ROOM ? "" : g.name)}
-                                    title={scene.name}
-                                    imgSrc={presetImage(presetMap[scene.preset_id])}
-                                    onClick={(id) => onActivate(id)}
-                                    actionIcon={"mdi:pencil"}
-                                    actionLabel={t("edit")}
-                                    onActionClick={() => onEdit(scene)}
-                                    badge={scene.preset_id === MUSIC_PRESET_ID ? t("music_badge") : scene.preset_id === DAYTIME_PRESET_ID ? t("daytime_badge") : (scene.dynamic ? t("badge_dynamic") : undefined)}
-                                    badgeIcon={scene.preset_id === MUSIC_PRESET_ID ? "mdi:music-note" : scene.preset_id === DAYTIME_PRESET_ID ? "mdi:theme-light-dark" : undefined}
-                                    active={activeIds.has(scene.id)}
-                                />
-                            ))}
-                            <NewTile
-                                small
-                                label={t("new_scene")}
-                                icon={"mdi:plus"}
-                                onClick={() => onNew(g.key === NO_ROOM ? undefined : g.key)}
-                            />
-                        </div>
+                                </div>
                         }
                     </section>
                 ))}

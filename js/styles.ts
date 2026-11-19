@@ -135,6 +135,58 @@ button { font: inherit; color: inherit; }
 .sp-chip.active { background: var(--sp-accent); border-color: var(--sp-accent); color: var(--sp-on-accent); font-weight: 500; }
 .sp-chip.small { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 14px; }
 
+/* room canvas (4.0): the lights of a scene on the plan of their room */
+.sp-room {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--sp-radius);
+    border: 1px solid var(--sp-line);
+    background: #14161c;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+}
+.sp-room-img { position: absolute; inset: -8%; background-size: cover; background-position: center; filter: blur(14px) saturate(1.3); opacity: 0.75; }
+.sp-room-note { position: absolute; left: 12px; bottom: 10px; color: rgba(255, 255, 255, 0.6); }
+.sp-room-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.sp-room-lines line { stroke: rgba(255, 255, 255, 0.9); stroke-width: 3; stroke-linecap: round; }
+.sp-room-arrow { position: absolute; right: 10px; top: 10px; color: rgba(255, 255, 255, 0.85); --mdc-icon-size: 28px; pointer-events: none; }
+.sp-room-light {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+    cursor: grab;
+    touch-action: none;
+}
+.sp-room-light.end { width: 14px; height: 14px; margin: -7px 0 0 -7px; background: #fff; }
+.sp-room-light.active { border-color: var(--sp-accent); box-shadow: 0 0 0 3px rgba(var(--rgb-primary-color, 3, 169, 244), 0.45); z-index: 2; }
+.sp-room-light:active { cursor: grabbing; }
+.sp-room-label {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+}
+.sp-room-bar { display: flex; align-items: center; gap: 4px; }
+.sp-room-bar .sp-icon-btn { width: 36px; height: 36px; color: var(--sp-text); }
+.sp-room-bar .sp-icon-btn.active { color: var(--sp-accent); }
+.sp-room-directions .sp-chip { padding: 0 6px; display: inline-flex; align-items: center; }
+.sp-room-directions ha-icon { --mdc-icon-size: 20px; }
+
 /* running dynamic scenes */
 .sp-running-list { display: flex; flex-direction: column; gap: 8px; }
 .sp-running {

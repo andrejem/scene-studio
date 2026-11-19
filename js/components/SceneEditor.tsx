@@ -12,6 +12,7 @@ import HaIcon from "./hass/building_blocks/HaIcon";
 import {HaTargetSelectorValue} from "./hass/selectors/HaTargetSelector";
 import {Translate} from "../i18n";
 import {Preset} from "../types";
+import {RoomCanvas} from "./RoomCanvas";
 import {BrightnessField, Collapsible, FocusField, MoreOptions, SaturationField, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
 import {PresetTile} from "./PresetTile";
 import {
@@ -31,7 +32,9 @@ export type SceneDraft = {
     optional: Array<string>,
     lightBrightness: {[entityId: string]: number},
     music?: MusicSettings,
-    gradient?: boolean
+    gradient?: boolean,
+    /** room canvas (4.0): colors by the place of the lights, direction a dynamic scene moves the picture in */
+    spatial?: {direction?: number} | null
 };
 
 type SceneLight = {entity_id: string, name: string, optional: boolean, gradient?: boolean};
@@ -66,6 +69,8 @@ export const SceneEditor: React.FunctionComponent<{
     const [lightBrightness, setLightBrightness] = useState<{[entityId: string]: number}>({});
     const [music, setMusic] = useState<MusicSettings>({media_player: "", auto_start: "never", when_on: false});
     const [gradient, setGradient] = useState(true);
+    const [spatial, setSpatial] = useState(false);
+    const [direction, setDirection] = useState(0);
     const [sceneLights, setSceneLights] = useState<Array<SceneLight>>([]);
     const [moreOpen, setMoreOpen] = useState(false);
     const [showLeftOut, setShowLeftOut] = useState(false);
@@ -95,6 +100,8 @@ export const SceneEditor: React.FunctionComponent<{
         setLightBrightness(draft.lightBrightness);
         setMusic({media_player: "", auto_start: "never", when_on: false, ...(draft.music ?? {})});
         setGradient(draft.gradient !== false);
+        setSpatial(!!draft.spatial);
+        setDirection(draft.spatial?.direction ?? 0);
         setMoreOpen(false);
         setShowLeftOut(false);
         setPicker(!draft.presetId);
@@ -241,6 +248,9 @@ export const SceneEditor: React.FunctionComponent<{
         }
         if (!gradient) {
             payload.gradient = false;
+        }
+        if (spatial) {
+            payload.spatial = {direction};
         }
         return {service, payload};
     };
@@ -542,6 +552,24 @@ export const SceneEditor: React.FunctionComponent<{
 
                             <SaturationField t={t} value={tun.saturation} onChange={(v) => set("saturation", v)}/>
 
+                            <SwitchRow label={t("spatial_switch")} value={spatial} onChange={setSpatial} className={"scene-spatial"}/>
+                            {
+                                spatial &&
+                                <>
+                                    <div className={"sp-secondary sp-small"}>{t("spatial_help")}</div>
+                                    <RoomCanvas
+                                        hass={hass}
+                                        t={t}
+                                        lights={sceneLights}
+                                        areaId={areaId}
+                                        image={preset && presetId !== MUSIC_PRESET_ID ? presetImage(preset) : undefined}
+                                        moving={tun.dynamic}
+                                        direction={direction}
+                                        onDirection={setDirection}
+                                    />
+                                </>
+                            }
+
                             <Collapsible
                                 label={t("more_options")}
                                 hint={tun.dynamic ? t("more_dynamic_hint") : t("more_once_hint")}
@@ -742,6 +770,7 @@ export function draftFromScene(scene: SavedScene, tun: Tunables, areaId: string 
         optional: scene.optional ?? [],
         lightBrightness: scene.light_brightness ?? {},
         music: scene.music,
-        gradient: scene.gradient
+        gradient: scene.gradient,
+        spatial: scene.spatial
     };
 }
