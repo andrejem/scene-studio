@@ -287,7 +287,7 @@ export const RoomCanvas: React.FunctionComponent<{
             >
                 {image && <div className={"sp-room-img"} style={{backgroundImage: `url("${image}")`}}/>}
                 {main?.image && <div className={"sp-room-plan"} style={{backgroundImage: `url("${main.image}")`}}/>}
-                {!image && <div className={"sp-room-note sp-secondary sp-small"}>{t("spatial_music")}</div>}
+                {!image && preview && <div className={"sp-room-note sp-secondary sp-small"}>{t("spatial_music")}</div>}
                 <svg className={"sp-room-lines"} viewBox={"0 0 100 100"} preserveAspectRatio={"none"}>
                     {placed.map(l => {
                         const p = placeOf(l.entity_id)!;
