@@ -180,3 +180,11 @@ def test_the_picture_of_a_preset_becomes_a_field():
     with open(path, "rb") as file:
         assert field_from_bytes(file.read()) == field
     assert _field_from_image(b"no picture") is None
+
+
+async def test_a_music_scene_brings_the_cover_as_its_picture(hass: HomeAssistant):
+    from custom_components.scene_studio.spatial import async_field_for
+
+    field = _field((250, 10, 10), (10, 10, 250))
+    assert await async_field_for(hass, {"id": "music_x", "field": field}) is field
+    assert await async_field_for(hass, {"id": "no picture"}) is None

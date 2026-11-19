@@ -81,6 +81,11 @@ apply_preset:
       description: "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
       selector:
         boolean:
+    spatial:
+      name: "Colors by place in the room"
+      description: "Optional. Lights with a place on a room plan (scene editor) get the color the picture of the preset has there. An empty object turns it on; direction (0-359, 0 = right, 90 = down) is where a dynamic scene moves the picture to."
+      selector:
+        object:
     saturation:
       name: "Color intensity"
       description: "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
@@ -211,6 +216,11 @@ start_dynamic_scene:
       description: "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
       selector:
         boolean:
+    spatial:
+      name: "Colors by place in the room"
+      description: "Optional. Lights with a place on a room plan (scene editor) get the color the picture of the preset has there. An empty object turns it on; direction (0-359, 0 = right, 90 = down) is where a dynamic scene moves the picture to."
+      selector:
+        object:
     saturation:
       name: "Color intensity"
       description: "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
@@ -378,6 +388,11 @@ save_scene:
       description: "Optional, default true. Gradient lamps (e.g. Hue Signe or Play gradient in Zigbee2MQTT) show all colors of the preset as a gradient. false: one color like any other lamp."
       selector:
         boolean:
+    spatial:
+      name: "Colors by place in the room"
+      description: "Optional. Lights with a place on a room plan (scene editor) get the color the picture of the preset has there. An empty object turns it on; direction (0-359, 0 = right, 90 = down) is where a dynamic scene moves the picture to."
+      selector:
+        object:
     saturation:
       name: "Color intensity"
       description: "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."

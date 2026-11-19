@@ -30,6 +30,7 @@ Applies a preset once.
 | `light_brightness` | | Brightness in percent per light, e.g. `{light.strip: 20}`; 0 = off at the start |
 | `gradient` | | Default `true`: gradient lamps in Zigbee2MQTT show all colors of the preset ([details](Lights%20of%20a%20scene.md#gradient-lamps)); `false` = one color |
 | `saturation` | | Color intensity −100 … 100, default 0: more vivid (+) or paler (−) colors, the hue stays ([details](Saved%20scenes.md#color-intensity)) |
+| `spatial` | | Colors by the place of the lights on their room plan instead of by chance: `{}` or `{direction: 0…359}` (where a dynamic scene moves the picture to; 0 = right, 90 = down) – see [Room canvas](Room%20canvas.md) |
 
 ### `start_dynamic_scene`
 
@@ -42,7 +43,7 @@ Starts a loop that applies the preset with smart shuffled colors again and again
 | `transition` | | Transition of a color change in seconds |
 | `interval_min`, `interval_max` | | Per-light timing: every light waits a random time in this range ([details](Per-light%20timing.md)) |
 | `transition_min`, `transition_max` | | Per-light timing: random transition in this range |
-| `exclude`, `keep_groups`, `optional`, `light_brightness`, `gradient`, `saturation` | | as for `apply_preset` |
+| `exclude`, `keep_groups`, `optional`, `light_brightness`, `gradient`, `saturation`, `spatial` | | as for `apply_preset` |
 
 ### `stop_dynamic_scene`, `stop_dynamic_scenes_for_targets`, `stop_all_dynamic_scenes`
 
@@ -134,6 +135,7 @@ data:
 | `scene_studio/resolve_targets` | Lights a scene with these targets controls |
 | `scene_studio/get_music_scenes` | Active music scenes with speaker, cover and current colors |
 | `scene_studio/get_daytime`, `preview_daytime`, `set_daytime` | Time of day: current phase, limits and next changes; what other limits would give; change the limits (admins) |
+| `scene_studio/get_room_plans`, `save_room_plan`, `delete_room_plan` | Room canvas: the plans of the rooms with the places of their lights; save and delete need an administrator |
 | `scene_studio/save_custom_preset`, `delete_custom_preset`, `set_preset_image`, `reset_preset` | Own presets from colors or photos, colors and default brightness of built-in presets (admins; the preset is passed as `preset_id`) – see [Own presets](Scene%20from%20photo.md) |
 | `scene_studio/set_preset_hidden` | Hide a built-in preset or show it again (admins) |
 | `scene_studio/set_scene_order` | Order of the saved scenes, `scene_ids` in the new order (admins) |

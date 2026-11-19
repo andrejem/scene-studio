@@ -38,6 +38,11 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     `accent`) go into the runtime preset as `roles` + `pools`; `presets.apply_preset` uses them only then.
     A cover without colors gives `WHITE` (`neutral`: `white` / `dark`); a dark one adds `dim` to the
     runtime preset, which `apply_preset` multiplies into the brightness until the next cover.
+  - `spatial.py` - room canvas (4.0): room plans (`RoomPlans`, store `scene_studio.room_plans`: places of the
+    lights, x/y 0..1 on a 16:10 plan, optional x2/y2 for strips) and `assign()`, which gives every placed
+    light the preset color that belongs to the picture at its place. `apply_preset(spatial=...)` uses it;
+    dynamic scenes add `since` and `period` so the picture moves (`shift_of`). Music scenes put the cover
+    into the runtime preset as `field`. Without `spatial` or without places nothing changes.
   - `daytime.py` - time of day (3.7): the phases day, dusk, night from sun elevation and clock times
     (`limits_of`, `phase_at`, `next_changes`; settings in their own store, one for the integration) and
     time of day scenes: saved scenes with the preset `DAYTIME_PRESET_ID` and `daytime` (a saved scene
@@ -73,7 +78,8 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   `App.tsx` tabs and data, `pages/ScenesPage.tsx` saved scenes by room, `pages/PresetApplyPage.tsx`
   presets tab, `components/SceneEditor.tsx` scene editor, `components/Controls.tsx` form controls,
   `components/RunningStrip.tsx` running dynamic scenes, `components/PhotoPresetDialog.tsx` presets
-  from photos, `components/ImportBanner.tsx` import from Scene Presets, `components/DaytimeEditor.tsx`
+  from photos, `components/ImportBanner.tsx` import from Scene Presets, `components/RoomCanvas.tsx` the lights of a scene on their room plan (shown in the scene editor with
+  the switch for the room canvas, saves the places itself), `components/DaytimeEditor.tsx`
   editor of time of day scenes and the settings of the phases (opened instead of the scene editor for
   the preset Time of day), `tunables.ts` settings ↔
   service calls, `styles.ts` CSS with Home Assistant theme variables, `i18n.ts` texts EN/DE,

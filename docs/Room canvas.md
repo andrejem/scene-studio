@@ -1,0 +1,72 @@
+# Room canvas: colors by place in the room
+
+Normally the colors of a preset are spread over the lights by chance. With the room canvas a scene
+knows **where the lights are**. The picture of the preset is laid over the room, and every light
+takes the color the picture has at its place: the warm side of a sunset is on one side of the room,
+the dark blue on the other – every time the scene starts.
+
+## In short
+
+- You place the lights of a room **once** on a plan, with the mouse or the finger. Every scene of
+  that room uses the places.
+- The switch **Colors by place in the room** is off by default. Scenes without it, and lights
+  without a place, behave as before.
+- It works with every light Home Assistant knows, with built-in presets, your own photos and
+  music scenes.
+- Dynamic scenes **move the picture through the room** in a direction you choose, instead of
+  changing colors by chance.
+
+## Setting it up
+
+1. Open a scene in the scene editor (or create a new one) and turn on **Colors by place in the room**.
+2. The plan shows the picture of the preset. Below it are the lights that have no place yet: tap
+   a light to put it on the plan, then drag it to where it is in the room. The plan is the room seen
+   from above; which wall is at the top is up to you, as long as it is the same for all lights.
+3. A **light strip** or another long light: tap the light on the plan, then the strip symbol. It
+   gets a second handle for its other end. Gradient lamps then show the colors along their length.
+4. **Try** shows the result on the lights. Save the scene.
+
+The places are saved as soon as a light is dropped, not with the scene: they belong to the room.
+The cross takes a light off the plan again. Placing lights needs an administrator.
+
+## How the colors are chosen
+
+The lights only ever get the **colors of the preset** – the picture decides which light gets which
+of them. The preset colors are put in the order in which the picture changes its colors, each with
+the share it has in the preset. So a picture with colors that are close together (an aurora in blue
+and green) still spreads all preset colors through the room, and no color is lost.
+
+- All colors of the preset stay in use, as far as there are lights for them.
+- Presets without a picture, and pictures in a single color, run their colors from left to right.
+- Color intensity, brightness per light and the other settings of the scene apply as usual.
+- A group that is used as one light sits in the middle of its lights.
+
+## Dynamic scenes
+
+A dynamic scene with the room canvas moves the picture slowly through the room: the colors wander
+from one side to the other and come back. Choose the direction with the arrows below the plan
+(the arrow in the plan shows it). The picture crosses the room once in ten color changes, so the
+interval of the scene sets the speed.
+
+## Music scenes
+
+For a music scene the **album cover** is laid over the room: what is on the left of the cover is on
+the left of the room. Main and accent lights keep their own colors and get the one of them that
+fits their place.
+
+## Services
+
+`apply_preset`, `start_dynamic_scene` and `save_scene` accept `spatial`:
+
+```yaml
+action: scene_studio.start_dynamic_scene
+data:
+  preset_id: 940fd864-51e1-4761-95d3-75d4d68835ea
+  targets:
+    area_id: living_room
+  interval: 60
+  spatial:
+    direction: 90   # 0 = to the right, 90 = down on the plan; only used by dynamic scenes
+```
+
+Without `spatial` the colors are spread as before.

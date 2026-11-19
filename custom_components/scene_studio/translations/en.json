@@ -63,6 +63,10 @@
         "saturation": {
           "name": "Color intensity",
           "description": "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
+        },
+        "spatial": {
+          "name": "Colors by place in the room",
+          "description": "Optional. Lights with a place on a room plan (scene editor) get the color the picture of the preset has there. An empty object turns it on; direction (0-359, 0 = right, 90 = down) is where a dynamic scene moves the picture to."
         }
       }
     },
@@ -133,6 +137,10 @@
         "saturation": {
           "name": "Color intensity",
           "description": "Optional, -100 to 100, default 0. Positive values make the colors of the preset more vivid, negative values paler (towards white). The hue stays."
+        },
+        "spatial": {
+          "name": "Colors by place in the room",
+          "description": "Optional. Lights with a place on a room plan (scene editor) get the color the picture of the preset has there. An empty object turns it on; direction (0-359, 0 = right, 90 = down) is where a dynamic scene moves the picture to."
         }
       }
     },
@@ -251,6 +259,10 @@
         "daytime": {
           "name": "Time of day scene",
           "description": "Optional. Only for the preset Time of day: the scene starts another saved scene depending on the time of day. day, dusk, night: the ID of a saved scene for each (a missing one uses the time before it). follow: true changes the scene by itself when the next time of day begins while the lights are on (default false)."
+        },
+        "spatial": {
+          "name": "Colors by place in the room",
+          "description": "Optional. Lights with a place on a room plan (scene editor) get the color the picture of the preset has there. An empty object turns it on; direction (0-359, 0 = right, 90 = down) is where a dynamic scene moves the picture to."
         }
       }
     },
