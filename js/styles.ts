@@ -150,6 +150,9 @@ button { font: inherit; color: inherit; }
 }
 .sp-room-img { position: absolute; inset: -8%; background-size: cover; background-position: center; filter: blur(14px) saturate(1.3); opacity: 0.75; }
 .sp-room-plan { position: absolute; inset: 0; background-size: 100% 100%; mix-blend-mode: multiply; opacity: 0.9; }
+.sp-room-overlay { z-index: 12; }
+.sp-sheet.sp-room-plan-dialog { width: min(760px, 100vw); max-width: 100vw; }
+.sp-room-plan-open { width: 36px; height: 36px; color: var(--secondary-text-color); }
 .sp-room-tools { display: flex; align-items: center; gap: 2px; }
 .sp-room-tools .sp-icon-btn { width: 36px; height: 36px; color: var(--sp-text-dim, var(--secondary-text-color)); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .sp-room-tools .sp-icon-btn.active { color: var(--sp-accent); }

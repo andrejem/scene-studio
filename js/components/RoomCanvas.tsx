@@ -49,9 +49,14 @@ export const RoomCanvas: React.FunctionComponent<{
     /** dynamic scenes move the picture: show and choose the direction */
     moving: boolean,
     direction: number,
-    onDirection: (direction: number) => void
-}> = ({hass, t, lights, areaId, image, moving, direction, onDirection}) => {
-    const canEdit = !!hass?.user?.is_admin;
+    onDirection: (direction: number) => void,
+    /** in a scene: only shows the plan of the room; the plan itself is edited in the room plan dialog */
+    preview?: boolean,
+    onOpenPlan?: () => void,
+    /** changes when the plans were edited elsewhere: load them again */
+    version?: number
+}> = ({hass, t, lights, areaId, image, moving, direction, onDirection, preview, onOpenPlan, version}) => {
+    const canEdit = !!hass?.user?.is_admin && !preview;
     const [plans, setPlansState] = useState<Array<Plan>>([]);
     const plansRef = useRef<Array<Plan>>([]);
     const [selected, setSelected] = useState<string | null>(null);
@@ -71,7 +76,7 @@ export const RoomCanvas: React.FunctionComponent<{
         }).catch(() => {
             /* intentional: without plans every light is unplaced */
         });
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [version]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const placeOf = (entity: string): Place | undefined => {
         for (const plan of plans) {
@@ -362,7 +367,23 @@ export const RoomCanvas: React.FunctionComponent<{
             }
 
             {
-                unplaced.length > 0 &&
+                preview &&
+                <div className={"sp-room-bar"}>
+                    {
+                        unplaced.length > 0 &&
+                        <button type={"button"} className={"sp-chip small sp-room-missing"} onClick={onOpenPlan}>
+                            {t("spatial_unplaced_count", {count: unplaced.length})}
+                        </button>
+                    }
+                    <span className={"sp-grow"}/>
+                    <button type={"button"} className={"sp-icon-btn sp-room-open"} title={t("room_plan")} onClick={onOpenPlan}>
+                        <ha-icon icon={"mdi:floor-plan"}/>
+                    </button>
+                </div>
+            }
+
+            {
+                !preview && unplaced.length > 0 &&
                 <>
                     <span className={"sp-field-label"}>{t("spatial_unplaced")}</span>
                     <div className={"sp-chips wrap"}>
@@ -402,6 +423,79 @@ export const RoomCanvas: React.FunctionComponent<{
                 </>
             }
             {error && <div className={"sp-error"}>{error}</div>}
+        </div>
+    );
+};
+
+
+/** The plan of a room: all its lights, the format and the floor plan. Set up once, used by every scene of the room. */
+export const RoomPlanDialog: React.FunctionComponent<{
+    hass: any,
+    t: Translate,
+    areaId?: string,
+    /** lights that are not in the room but belong on this plan (lights of the scene the dialog was opened from) */
+    lights?: Array<CanvasLight>,
+    image?: string,
+    onClose: () => void
+}> = ({hass, t, areaId, lights, image, onClose}) => {
+    const [roomLights, setRoomLights] = useState<Array<CanvasLight>>([]);
+
+    useEffect(() => {
+        if (!areaId) {
+            return;
+        }
+        hass.callWS({type: "scene_studio/resolve_targets", targets: {area_id: [areaId]}}).then(result => {
+            setRoomLights(result?.lights ?? []);
+        }).catch(() => {
+            /* intentional: then only the lights of the scene are shown */
+        });
+    }, [areaId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.stopPropagation();
+                onClose();
+            }
+        };
+        window.addEventListener("keydown", onKey, true);
+        return () => window.removeEventListener("keydown", onKey, true);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const all = [...roomLights];
+    (lights ?? []).forEach(l => {
+        if (!all.some(r => r.entity_id === l.entity_id)) {
+            all.push(l);
+        }
+    });
+    const title = t("room_plan") + " · " + (areaName(hass, areaId) || t("room_plan_home"));
+
+    return (
+        <div className={"sp-overlay sp-room-overlay"} onClick={(e) => {
+            if (e.target === e.currentTarget) {
+                onClose();
+            }
+        }}>
+            <div className={"sp-sheet sp-room-plan-dialog"} role={"dialog"} aria-modal={"true"} aria-label={title}>
+                <div className={"sp-sheet-head"}>
+                    <button className={"sp-icon-btn"} aria-label={t("close")} onClick={onClose}>
+                        <ha-icon icon={"mdi:close"}/>
+                    </button>
+                    <div className={"sp-sheet-title"}>{title}</div>
+                </div>
+                <div className={"sp-sheet-body"}>
+                    <RoomCanvas
+                        hass={hass}
+                        t={t}
+                        lights={all}
+                        areaId={areaId}
+                        image={image}
+                        moving={false}
+                        direction={0}
+                        onDirection={() => undefined}
+                    />
+                </div>
+            </div>
         </div>
     );
 };

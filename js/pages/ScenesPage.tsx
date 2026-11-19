@@ -9,6 +9,7 @@ import {NewTile, PresetTile} from "../components/PresetTile";
 import HaIcon from "../components/hass/building_blocks/HaIcon";
 import {useLocalStorage} from "../hooks/useLocalStorage";
 import {RunningScene} from "../components/RunningStrip";
+import {RoomPlanDialog} from "../components/RoomCanvas";
 import {DAYTIME_PRESET_ID, MUSIC_PRESET_ID, SavedScene, areaName, entityAreaId, presetImage, sceneAreaId, sceneEntityId, stripRoomName} from "../tunables";
 
 const NO_ROOM = "__none__";
@@ -30,6 +31,7 @@ export const ScenesPage: React.FunctionComponent<{
     const [storedRoom, setRoom] = useLocalStorage<string>("scene_studio_room", "all");
     const isAdmin = !!hass?.user?.is_admin;
     // Arrange mode: the room being arranged and its scene ids in the new order
+    const [planRoom, setPlanRoom] = useState<string | null>(null);
     const [arranging, setArranging] = useState<string | null>(null);
     const [draft, setDraft] = useState<Array<string>>([]);
     const [saving, setSaving] = useState(false);
@@ -119,6 +121,14 @@ export const ScenesPage: React.FunctionComponent<{
         dragId.current = null;
     };
 
+    // room canvas (4.0): the plan of a room is set up here, once for all its scenes
+    const planButton = (g: Group) => {
+        if (!isAdmin || g.key === NO_ROOM) return null;
+        return <button className={"sp-icon-btn sp-room-plan-open"} title={t("room_plan")} onClick={() => setPlanRoom(g.key)}>
+            <HaIcon icon={"mdi:floor-plan"} size={20}/>
+        </button>;
+    };
+
     const arrangeButtons = (g: Group) => {
         if (!isAdmin || g.scenes.length < 2) return null;
         if (arranging !== g.key) {
@@ -206,6 +216,7 @@ export const ScenesPage: React.FunctionComponent<{
             </nav>
 
             <div className={"sp-main"}>
+                {planRoom && <RoomPlanDialog hass={hass} t={t} areaId={planRoom} onClose={() => setPlanRoom(null)}/>}
                 <div className={"sp-chips sp-room-chips"}>
                     <button className={"sp-chip" + (room === "all" ? " active" : "")} onClick={() => setRoom("all")}>{t("all")}</button>
                     {groups.map(g => (
@@ -217,6 +228,7 @@ export const ScenesPage: React.FunctionComponent<{
 
                 <div className={"sp-page-head"}>
                     <h2>{selectedRoom ? selectedRoom.name : t("all_scenes")}</h2>
+                    {selectedRoom && room !== "all" && planButton(selectedRoom)}
                     {selectedRoom && room !== "all" && arrangeButtons(selectedRoom)}
                     <button
                         className={"sp-btn primary sp-new-scene"}
@@ -233,6 +245,7 @@ export const ScenesPage: React.FunctionComponent<{
                             <div className={"sp-section-head"}>
                                 <h3>{g.name}</h3>
                                 <span className={"sp-section-tools"}>
+                                    {planButton(g)}
                                     {arrangeButtons(g)}
                                     {arranging !== g.key && <span className={"sp-secondary sp-small"}>{count(g.scenes.length)}</span>}
                                 </span>

@@ -12,7 +12,7 @@ import HaIcon from "./hass/building_blocks/HaIcon";
 import {HaTargetSelectorValue} from "./hass/selectors/HaTargetSelector";
 import {Translate} from "../i18n";
 import {Preset} from "../types";
-import {RoomCanvas} from "./RoomCanvas";
+import {RoomCanvas, RoomPlanDialog} from "./RoomCanvas";
 import {BrightnessField, Collapsible, FocusField, MoreOptions, SaturationField, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
 import {PresetTile} from "./PresetTile";
 import {
@@ -71,6 +71,8 @@ export const SceneEditor: React.FunctionComponent<{
     const [gradient, setGradient] = useState(true);
     const [spatial, setSpatial] = useState(false);
     const [direction, setDirection] = useState(0);
+    const [planOpen, setPlanOpen] = useState(false);
+    const [planVersion, setPlanVersion] = useState(0);
     const [sceneLights, setSceneLights] = useState<Array<SceneLight>>([]);
     const [moreOpen, setMoreOpen] = useState(false);
     const [showLeftOut, setShowLeftOut] = useState(false);
@@ -566,7 +568,24 @@ export const SceneEditor: React.FunctionComponent<{
                                         moving={tun.dynamic}
                                         direction={direction}
                                         onDirection={setDirection}
+                                        preview
+                                        onOpenPlan={() => setPlanOpen(true)}
+                                        version={planVersion}
                                     />
+                                    {
+                                        planOpen &&
+                                        <RoomPlanDialog
+                                            hass={hass}
+                                            t={t}
+                                            areaId={areaId}
+                                            lights={sceneLights}
+                                            image={preset && presetId !== MUSIC_PRESET_ID ? presetImage(preset) : undefined}
+                                            onClose={() => {
+                                                setPlanOpen(false);
+                                                setPlanVersion(v => v + 1);
+                                            }}
+                                        />
+                                    }
                                 </>
                             }
 

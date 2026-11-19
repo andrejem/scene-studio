@@ -78,8 +78,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   `App.tsx` tabs and data, `pages/ScenesPage.tsx` saved scenes by room, `pages/PresetApplyPage.tsx`
   presets tab, `components/SceneEditor.tsx` scene editor, `components/Controls.tsx` form controls,
   `components/RunningStrip.tsx` running dynamic scenes, `components/PhotoPresetDialog.tsx` presets
-  from photos, `components/ImportBanner.tsx` import from Scene Presets, `components/RoomCanvas.tsx` the lights of a scene on their room plan (shown in the scene editor with
-  the switch for the room canvas, saves the places itself), `components/DaytimeEditor.tsx`
+  from photos, `components/ImportBanner.tsx` import from Scene Presets, `components/RoomCanvas.tsx` room canvas: `RoomPlanDialog` sets up the plan of a room (opened from the
+  room headings of the scenes tab and from the scene editor, saves by itself), `RoomCanvas` with `preview` shows
+  it read-only in the scene editor, `components/DaytimeEditor.tsx`
   editor of time of day scenes and the settings of the phases (opened instead of the scene editor for
   the preset Time of day), `tunables.ts` settings ↔
   service calls, `styles.ts` CSS with Home Assistant theme variables, `i18n.ts` texts EN/DE,

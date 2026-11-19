@@ -7,8 +7,8 @@ the dark blue on the other – every time the scene starts.
 
 ## In short
 
-- You place the lights of a room **once** on a plan, with the mouse or the finger. Every scene of
-  that room uses the places.
+- You place the lights of a room **once** on its room plan, with the mouse or the finger. Every
+  scene of that room uses the places; a scene only has a switch.
 - The switch **Colors by place in the room** is off by default. Scenes without it, and lights
   without a place, behave as before.
 - It works with every light Home Assistant knows, with built-in presets, your own photos and
@@ -18,22 +18,28 @@ the dark blue on the other – every time the scene starts.
 
 ## Setting it up
 
-1. Open a scene in the scene editor (or create a new one) and turn on **Colors by place in the room**.
-2. The plan shows the picture of the preset. Below it are the lights that have no place yet: tap
-   a light to put it on the plan, then drag it to where it is in the room. The plan is the room seen
-   from above; which wall is at the top is up to you, as long as it is the same for all lights.
+**1. The room plan – once per room**
+
+1. Tab **Scenes** → the floor plan symbol next to the name of the room opens its **room plan**.
+2. Below the plan are all lights of the room that have no place yet: tap a light to put it on the
+   plan, then drag it to where it is in the room. The plan is the room seen from above; which wall
+   is at the top is up to you, as long as it is the same for all lights.
 3. Choose the **format** of the plan with the symbols above it: landscape, square or portrait, so a
    narrow corridor or a balcony is not distorted. Or load your **own floor plan** (a drawing or a
    photo) with the floor plan symbol: the plan takes its format, and you place the lights right on
-   it. The picture of the preset is cut to the format of the plan. A room with corners or niches
-   needs no special form: the plan is the rectangle around the room.
+   it. A room with corners or niches needs no special form: the plan is the rectangle around the room.
 4. A **light strip** or another long light: tap the light on the plan, then the strip symbol. It
    gets a second handle for its other end. Gradient lamps then show the colors along their length.
-5. **Try** shows the result on the lights. Save the scene.
 
-The places, the format and the floor plan are saved at once, not with the scene: they belong to the
-room, and every scene of the room uses them.
-The cross takes a light off the plan again. Placing lights needs an administrator.
+Everything is saved at once. The cross takes a light off the plan again. The room plan needs an
+administrator.
+
+**2. The scenes**
+
+In the scene editor turn on **Colors by place in the room**. The scene shows the plan of its room
+with the picture of the preset over it; the picture is cut to the format of the plan. If lights of
+the scene have no place yet, the editor says so – the symbol next to it opens the room plan.
+**Try** shows the result on the lights.
 
 ## How the colors are chosen
 
