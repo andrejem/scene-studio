@@ -34,6 +34,7 @@ SCENE_SETTING_KEYS = (
     "optional",
     "light_brightness",
     "gradient",
+    "spatial",
 )
 
 

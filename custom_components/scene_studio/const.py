@@ -61,3 +61,7 @@ DAYTIME_PRESET_ID = "d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63"
 ATTR_GRADIENT = "gradient"
 # color intensity of a scene: -100 (pale, towards white) .. 0 (as the preset) .. 100 (vivid)
 ATTR_SATURATION = "saturation"
+
+# Added by andrejem (2026): room canvas (4.0) - colors by the place of the lights on a room plan,
+# {"direction": 0-359} (direction a dynamic scene moves the picture in), see spatial.py
+ATTR_SPATIAL = "spatial"

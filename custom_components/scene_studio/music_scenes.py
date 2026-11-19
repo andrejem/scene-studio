@@ -26,6 +26,7 @@ from homeassistant.helpers.event import async_call_later, async_track_state_chan
 from homeassistant.helpers.network import get_url
 from homeassistant.util import color as color_util
 
+from .spatial import field_from_bytes
 from .const import (
     ATTR_EXCLUDE,
     ATTR_KEEP_GROUPS,
@@ -393,6 +394,8 @@ class MusicScenes:
             preset["pools"] = pools
         if pools and pools.get("dim"):
             preset["dim"] = pools["dim"]  # dark cover without colors: white, but dimmed
+        if pools and pools.get("field"):
+            preset["field"] = pools["field"]
         RUNTIME_PRESETS[preset_id] = preset
         return preset_id
 
@@ -697,6 +700,9 @@ class MusicScenes:
             "main": palette["main"], "accent": palette["accent"], "focus": focus,
             "dim": DARK_DIM if palette.get("neutral") == "dark" else None,
         }
+        if scene and scene.get("spatial") and not palette.get("neutral"):
+            # room canvas (4.0): the cover lies over the room, left on the cover is left in the room
+            self._pools[scene_id]["field"] = await self.hass.async_add_executor_job(field_from_bytes, data)
         return palette["colors"]
 
     def _schedule_cover(self, scene: dict):
@@ -758,6 +764,7 @@ class MusicScenes:
                 light_brightness={k: v for k, v in (settings or {}).items() if v > 0} or None,
                 gradient=scene.get("gradient", True),
                 saturation=scene.get("saturation"),
+                spatial=scene.get("spatial"),
             )
         finally:
             _INTERNAL.reset(token)

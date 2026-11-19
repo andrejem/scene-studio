@@ -12,6 +12,7 @@ from .util import light_brightness_for, resolve_entity_ids
 from .const import DOMAIN
 from .gradient import gradient_colors
 from .data import find_data
+from .spatial import assign, async_field_for, shift_of
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ async def apply_preset(
     light_brightness=None,
     gradient=True,
     saturation=None,
+    spatial=None,
 ):
     preset_data = RUNTIME_PRESETS.get(preset_id)
     for preset in [] if preset_data else PRESET_DATA.get("presets", []):
@@ -70,6 +72,25 @@ async def apply_preset(
     } if roles else {}
     role_index = {}
 
+    # Room canvas (4.0): lights with a place on a room plan get the color the picture has there.
+    # Without "spatial", without places or without picture nothing changes.
+    placed = {}
+    runtime = find_data(hass)
+    if spatial and len(preset_colors) > 1 and runtime is not None:
+        places = {}
+        for entity_id in light_entity_ids:
+            place = runtime.room_plans.place_of(entity_id)
+            if place is not None:
+                places[entity_id] = place
+        if places:
+            field = await async_field_for(hass, preset_data)
+            own = {}
+            for entity_id in places if pools else ():
+                pool = pools.get(_role_for(hass, entity_id, roles))
+                if pool:
+                    own[entity_id] = pool
+            placed = assign(field, places, preset_colors, shift_of(spatial), own)
+
     tasks = []
 
     for index, entity_id in enumerate(light_entity_ids):
@@ -86,7 +107,9 @@ async def apply_preset(
 
         role = _role_for(hass, entity_id, roles) if pools else None
         pool = pools.get(role)
-        if pool:
+        if entity_id in placed:
+            next_color = placed[entity_id]["color"]
+        elif pool:
             current_color = hass_state.attributes.get("xy_color", None)
             if shuffle and smart_shuffle and current_color is not None:
                 next_color = get_next_smart_random_color(current_color, pool)
@@ -112,12 +135,13 @@ async def apply_preset(
         temp_support = "color_temp" in supported_color_modes
         brightness_support = "brightness" in supported_color_modes
 
-        runtime = find_data(hass) if gradient else None
-        gradients = runtime.gradient if runtime is not None else None
+        gradients = runtime.gradient if gradient and runtime is not None else None
         if color_support and gradients is not None and len(preset_colors) > 1 and gradients.is_gradient(entity_id):
             # A gradient lamp shows all colors of the preset, starting with the one it would get
             tasks.append(gradients.async_apply(
-                entity_id, gradient_colors(preset_colors, next_color), light_params["brightness"], transition,
+                entity_id,
+                placed.get(entity_id, {}).get("strip") or gradient_colors(preset_colors, next_color),
+                light_params["brightness"], transition,
             ))
             continue
 

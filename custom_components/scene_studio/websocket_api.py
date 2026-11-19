@@ -15,6 +15,7 @@ from .migrate import async_import_status, async_import_scene_presets
 from .custom_presets import CustomPresetError, save_preset, delete_preset, set_hidden, set_override, reset_override
 from .file_utils import async_reload_preset_data
 from .data import find_data
+from .spatial import PlanError
 
 from homeassistant.util import dt as dt_util
 from .daytime import next_changes, normalize, phase_at
@@ -65,6 +66,49 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             "next": [{"phase": phase, "at": when.isoformat()} for phase, when in daytime.changes(3)],
             "following": daytime.following(),
         }
+
+    # Room canvas (4.0): plans of the rooms with the places of their lights
+    @websocket_api.websocket_command({vol.Required("type"): "scene_studio/get_room_plans"})
+    @websocket_api.callback
+    def ws_get_room_plans(hass, connection, msg) -> None:
+        data = find_data(hass)
+        connection.send_result(msg["id"], {"plans": data.room_plans.get_all() if data else []})
+
+    websocket_api.async_register_command(_hass, ws_get_room_plans)
+
+    @websocket_api.websocket_command({
+        vol.Required("type"): "scene_studio/save_room_plan",
+        vol.Optional("plan_id"): cv.string,
+        vol.Required("name"): cv.string,
+        vol.Optional("area_id"): vol.Any(None, cv.string),
+        vol.Required("lights"): {cv.entity_id: dict},
+    })
+    @websocket_api.require_admin
+    @websocket_api.async_response
+    async def ws_save_room_plan(hass, connection, msg) -> None:
+        data = find_data(hass)
+        try:
+            plan = await data.room_plans.async_save_plan({
+                "id": msg.get("plan_id"), "name": msg["name"], "area_id": msg.get("area_id"), "lights": msg["lights"],
+            })
+        except (PlanError, KeyError, TypeError, ValueError) as err:
+            connection.send_error(msg["id"], "invalid_plan", str(err) if isinstance(err, PlanError) else "Invalid plan")
+            return
+        connection.send_result(msg["id"], {"plan": plan})
+
+    websocket_api.async_register_command(_hass, ws_save_room_plan)
+
+    @websocket_api.websocket_command({
+        vol.Required("type"): "scene_studio/delete_room_plan",
+        vol.Required("plan_id"): cv.string,
+    })
+    @websocket_api.require_admin
+    @websocket_api.async_response
+    async def ws_delete_room_plan(hass, connection, msg) -> None:
+        data = find_data(hass)
+        connection.send_result(msg["id"], {"deleted": await data.room_plans.async_delete_plan(msg["plan_id"])})
+
+    websocket_api.async_register_command(_hass, ws_delete_room_plan)
 
     @websocket_api.websocket_command({vol.Required("type"): "scene_studio/get_daytime"})
     @websocket_api.callback

@@ -30,6 +30,8 @@ from .daytime import Daytime, PHASES, is_daytime_scene
 from .music_scenes import MusicScenes, AUTO_START_OPTIONS, AUTO_START_NEVER, runtime_preset_id, is_music_scene
 from .file_utils import RUNTIME_PRESETS
 from .gradient import GradientLights
+from .spatial import RoomPlans, STEPS_PER_PASS
+import time
 from .data import SceneStudioConfigEntry, SceneStudioData, get_data
 from .file_utils import async_ensure_directories, async_reload_preset_data
 
@@ -39,6 +41,12 @@ CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
 
 # 0 = the light is turned off when the scene starts
 LIGHT_BRIGHTNESS = vol.Schema({cv.entity_id: vol.All(vol.Coerce(float), vol.Range(min=0, max=100))})
+
+# Room canvas (4.0): colors by the place of the lights on a room plan. "direction" is where a dynamic
+# scene moves the picture to (degrees, 0 = to the right, 90 = down on the plan)
+SPATIAL = vol.Any(None, vol.Schema({
+    vol.Optional("direction", default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=359)),
+}))
 
 APPLY_PRESET_SCHEMA = vol.Schema({
     vol.Required(ATTR_SCENE_PRESET_ID): cv.string,
@@ -53,6 +61,7 @@ APPLY_PRESET_SCHEMA = vol.Schema({
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
     vol.Optional(ATTR_GRADIENT): cv.boolean,
     vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
+    vol.Optional(ATTR_SPATIAL): SPATIAL,
 })
 
 START_DYNAMIC_SCENE_SCHEMA = vol.Schema({
@@ -71,6 +80,7 @@ START_DYNAMIC_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
     vol.Optional(ATTR_GRADIENT): cv.boolean,
     vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
+    vol.Optional(ATTR_SPATIAL): SPATIAL,
 })
 
 
@@ -126,6 +136,7 @@ SAVE_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
     vol.Optional(ATTR_GRADIENT): cv.boolean,
     vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
+    vol.Optional(ATTR_SPATIAL): SPATIAL,
     vol.Optional("music"): MUSIC_SCHEMA,
     vol.Optional("daytime"): DAYTIME_SCHEMA,
 })
@@ -278,11 +289,13 @@ async def async_setup(hass, config):
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
             gradient=call.data.get(ATTR_GRADIENT, True),
             saturation=call.data.get(ATTR_SATURATION),
+            spatial=call.data.get(ATTR_SPATIAL),
         )
         d.optional_lights.register(
             optional_ids, light_entity_ids, preset_id, brightness_override,
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
             saturation=call.data.get(ATTR_SATURATION),
+            spatial=call.data.get(ATTR_SPATIAL),
         )
 
 
@@ -340,6 +353,14 @@ async def async_setup(hass, config):
             ATTR_GRADIENT: call.data.get(ATTR_GRADIENT, True),
             ATTR_SATURATION: call.data.get(ATTR_SATURATION),
         }
+        if call.data.get(ATTR_SPATIAL) is not None:
+            # the picture moves through the room: once across in STEPS_PER_PASS color changes
+            pace = interval
+            if ATTR_INTERVAL_MIN in call.data or ATTR_INTERVAL_MAX in call.data:
+                pace = (call.data.get(ATTR_INTERVAL_MIN, interval) + call.data.get(ATTR_INTERVAL_MAX, interval)) / 2
+            parameters[ATTR_SPATIAL] = {
+                **call.data[ATTR_SPATIAL], "since": time.monotonic(), "period": max(1, pace) * STEPS_PER_PASS,
+            }
 
         range_attrs = (ATTR_INTERVAL_MIN, ATTR_INTERVAL_MAX, ATTR_TRANSITION_MIN, ATTR_TRANSITION_MAX)
         if any(attr in call.data for attr in range_attrs):
@@ -353,6 +374,7 @@ async def async_setup(hass, config):
             optional_ids, light_entity_ids, preset_id, brightness_override, result["id"],
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
             saturation=call.data.get(ATTR_SATURATION),
+            spatial=parameters.get(ATTR_SPATIAL),
         )
         return result
 
@@ -540,6 +562,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: SceneStudioConfigEntry) 
     optional_lights = OptionalLights(hass, dynamic_scenes)
     music_scenes = MusicScenes(hass, saved_scenes, dynamic_scenes)
     gradients = GradientLights(hass)
+    room_plans = RoomPlans(hass)
+    await room_plans.async_load()
 
     async def activate(scene, targets, transition):
         return await async_activate_scene(hass, scene, targets, None, transition)
@@ -554,6 +578,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SceneStudioConfigEntry) 
         music_scenes=music_scenes,
         gradient=gradients,
         daytime=daytime,
+        room_plans=room_plans,
     )
     # stopped in reverse order on unload
     entry.async_on_unload(dynamic_scenes.stop_all)

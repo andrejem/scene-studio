@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from .music_scenes import MusicScenes
     from .optional_lights import OptionalLights
     from .saved_scenes import SavedSceneStore
+    from .spatial import RoomPlans
 
 
 @dataclass
@@ -30,6 +31,7 @@ class SceneStudioData:
     music_scenes: MusicScenes
     gradient: GradientLights
     daytime: Daytime
+    room_plans: RoomPlans
     # scene entities by saved scene id (scene.py), to mark a scene as activated
     scene_entities: dict = field(default_factory=dict)
 
