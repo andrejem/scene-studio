@@ -123,7 +123,8 @@ async def apply_preset(
             next_color = get_next_color(index, preset_colors)
 
         supported_color_modes = hass_state.attributes.get("supported_color_modes", "")
-        color_support = any(mode in supported_color_modes for mode in ["xy", "hs", "rgb", "rgbw"])
+        # rgbww (e.g. WiZ): without it such lights only got a white tone instead of the color
+        color_support = any(mode in supported_color_modes for mode in ["xy", "hs", "rgb", "rgbw", "rgbww"])
         temp_support = "color_temp" in supported_color_modes
         brightness_support = "brightness" in supported_color_modes
 
