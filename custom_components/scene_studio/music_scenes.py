@@ -44,7 +44,7 @@ from .const import (
 from .file_utils import PRESET_DATA, RUNTIME_PRESETS
 from .presets import apply_preset
 from .saved_scenes import build_service_call
-from .util import ensure_list, filter_targets, resolve_entity_ids, resolve_targets
+from .util import ensure_list, lights_of_targets, resolve_entity_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -328,21 +328,8 @@ class MusicScenes:
         return sorted(found)[0][1] if found else None
 
     def _scene_lights(self, scene: dict) -> list[str]:
-        targets = scene.get(ATTR_TARGETS) or {}
-        entity_ids = ensure_list(targets.get("entity_id"))
-        lights = filter_targets(
-            self.hass,
-            resolve_targets(
-                self.hass,
-                entity_ids,
-                ensure_list(targets.get("device_id")),
-                ensure_list(targets.get("area_id")),
-                ensure_list(targets.get("floor_id")),
-                ensure_list(targets.get("label_id")),
-            ),
-            entity_ids,
-            scene.get(ATTR_EXCLUDE),
-            scene.get(ATTR_KEEP_GROUPS),
+        lights = lights_of_targets(
+            self.hass, scene.get(ATTR_TARGETS) or {}, scene.get(ATTR_EXCLUDE), scene.get(ATTR_KEEP_GROUPS)
         )
         for entity_id in ensure_list(scene.get(ATTR_OPTIONAL)):
             for resolved in resolve_entity_ids(self.hass, entity_id):
@@ -642,15 +629,7 @@ class MusicScenes:
     async def async_adhoc_preset(self, targets: dict) -> str | None:
         """Preset "Music" applied directly (presets tab, automations): the current cover of the
         speaker in the room of these lights. None if no music is playing there."""
-        entity_ids = ensure_list(targets.get("entity_id"))
-        lights = resolve_targets(
-            self.hass,
-            entity_ids,
-            ensure_list(targets.get("device_id")),
-            ensure_list(targets.get("area_id")),
-            ensure_list(targets.get("floor_id")),
-            ensure_list(targets.get("label_id")),
-        )
+        lights = lights_of_targets(self.hass, targets)
         areas = ensure_list(targets.get("area_id")) or [a for a in (self._entity_area(l) for l in lights) if a]
         for area in dict.fromkeys(areas):
             player = self.player_in_area(area)

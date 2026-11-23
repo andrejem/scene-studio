@@ -30,6 +30,21 @@ A scene can target a whole area (or device, floor, label) and leave single light
 `exclude`. Excluding a light group also excludes its members. New lights in the area are part of
 the scene automatically.
 
+Since Home Assistant 2026.11 the target picker can exclude targets itself (**Exclude target**, or
+the details of an area). Scene Studio follows these exclusions too – for lights, devices, areas,
+floors and labels – in the services, in saved scenes and in the list of lights. They are stored in
+the target as an `exclude` block:
+
+```yaml
+targets:
+  area_id: [office, hallway]
+  exclude:
+    entity_id: [light.office_ceiling, light.hallway_ceiling]
+```
+
+Both kinds of exclusion can be used together. **Don't control** in the list of lights is Scene
+Studio's own and also works with older versions of Home Assistant.
+
 When lights come from an area, device, floor or label, Zigbee2MQTT/Govee segment lights
 (`*_segment_<n>`) are skipped, otherwise they would fight with their main light. Light groups of the
 area are resolved to their members. Lights and groups listed in `entity_id` are used as they are.

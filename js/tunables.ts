@@ -81,7 +81,8 @@ export const toList = (value: any): Array<string> => {
 };
 
 export const hasTargets = (targets: HaTargetSelectorValue | undefined): boolean => {
-    return Object.values(targets ?? {}).some((v: any) => Array.isArray(v) ? v.length > 0 : !!v);
+    // "exclude" (Home Assistant 2026.11) only leaves lights out, on its own it is no target
+    return Object.entries(targets ?? {}).some(([k, v]: [string, any]) => k !== "exclude" && (Array.isArray(v) ? v.length > 0 : !!v));
 };
 
 /** Service and payload that apply a preset with these settings (same as the panel always did). */

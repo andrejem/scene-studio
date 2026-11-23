@@ -1,8 +1,9 @@
 # Services
 
 All services are in the domain `scene_studio`. `targets` takes the usual Home Assistant target
-(`entity_id`, `device_id`, `area_id`, `floor_id`, `label_id`); light groups are resolved to their
-members unless they are listed in `keep_groups`. Preset IDs are listed in the
+(`entity_id`, `device_id`, `area_id`, `floor_id`, `label_id`), also with an `exclude` block as the
+target picker of Home Assistant 2026.11 writes it ([Lights of a scene](Lights%20of%20a%20scene.md));
+light groups are resolved to their members unless they are listed in `keep_groups`. Preset IDs are listed in the
 [preset overview](../custom_components/scene_studio/assets/Readme.md); IDs of presets made in the
 panel are shown in `userdata/custom/presets.json`.
 Hidden presets (no longer shown in the panel) keep working with their ID.

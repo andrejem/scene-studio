@@ -10,7 +10,7 @@ from homeassistant.components import websocket_api
 import homeassistant.helpers.config_validation as cv
 
 from .optional_lights import split_optional
-from .util import ensure_list, filter_targets, resolve_targets
+from .util import lights_of_targets
 from .migrate import async_import_status, async_import_scene_presets
 from .custom_presets import CustomPresetError, save_preset, delete_preset, set_hidden, set_override, reset_override
 from .file_utils import async_reload_preset_data
@@ -183,22 +183,7 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             hass, connection, msg
     ) -> None:
         """The lights a scene with these targets controls (same rules as the services)."""
-        targets = msg["targets"]
-        entity_ids = ensure_list(targets.get("entity_id"))
-        lights = filter_targets(
-            hass,
-            resolve_targets(
-                hass,
-                entity_ids,
-                ensure_list(targets.get("device_id")),
-                ensure_list(targets.get("area_id")),
-                ensure_list(targets.get("floor_id")),
-                ensure_list(targets.get("label_id")),
-            ),
-            entity_ids,
-            msg.get("exclude"),
-            msg.get("keep_groups"),
-        )
+        lights = lights_of_targets(hass, msg["targets"], msg.get("exclude"), msg.get("keep_groups"))
         base, _on, optional_ids = split_optional(hass, lights, msg.get("optional"), msg.get("keep_groups"))
         data = find_data(hass)
         gradients = data.gradient if data is not None else None

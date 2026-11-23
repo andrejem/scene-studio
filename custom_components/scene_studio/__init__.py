@@ -21,7 +21,7 @@ from .const import *
 from .dynamic_scenes import DynamicScene, DynamicSceneManager
 from .presets import apply_preset
 from .view import async_setup_view, async_remove_view
-from .util import ensure_list, resolve_targets, filter_targets, resolve_entity_ids, split_off, turn_off_lights
+from .util import lights_of_targets, resolve_entity_ids, split_off, turn_off_lights
 from .websocket_api import async_setup_websocket_api
 from .saved_scenes import SavedSceneStore, build_service_call
 from .optional_lights import OptionalLights, split_optional
@@ -180,20 +180,7 @@ def _detach_from_dynamic_scenes(hass, light_entity_ids):
 
 
 def _lights_of(hass, targets, exclude=None):
-    entity_ids = ensure_list(targets.get("entity_id"))
-    return filter_targets(
-        hass,
-        resolve_targets(
-            hass,
-            entity_ids,
-            ensure_list(targets.get("device_id")),
-            ensure_list(targets.get("area_id")),
-            ensure_list(targets.get("floor_id")),
-            ensure_list(targets.get("label_id")),
-        ),
-        entity_ids,
-        exclude,
-    )
+    return lights_of_targets(hass, targets, exclude)
 
 async def async_activate_scene(hass, scene, override=None, dynamic=None, transition=None):
     """Start a saved scene (not a time of day scene) and return the lights it was put on."""
@@ -253,19 +240,8 @@ async def async_setup(hass, config):
         shuffle = call.data.get(ATTR_SHUFFLE, False)
         smart_shuffle = call.data.get(ATTR_SMART_SHUFFLE, False)
 
-        entity_ids = ensure_list(targets.get("entity_id"))
-        device_ids = ensure_list(targets.get("device_id"))
-        area_ids = ensure_list(targets.get("area_id"))
-        floor_ids = ensure_list(targets.get("floor_id"))
-        label_ids = ensure_list(targets.get("label_id"))
-
-
-        light_entity_ids = filter_targets(
-            hass,
-            resolve_targets(hass, entity_ids, device_ids, area_ids, floor_ids, label_ids),
-            entity_ids,
-            call.data.get(ATTR_EXCLUDE),
-            call.data.get(ATTR_KEEP_GROUPS),
+        light_entity_ids = lights_of_targets(
+            hass, targets, call.data.get(ATTR_EXCLUDE), call.data.get(ATTR_KEEP_GROUPS)
         )
         light_entity_ids, optional_on, optional_ids = split_optional(
             hass, light_entity_ids, call.data.get(ATTR_OPTIONAL), call.data.get(ATTR_KEEP_GROUPS)
@@ -319,18 +295,8 @@ async def async_setup(hass, config):
         transition = call.data.get(ATTR_TRANSITION, 1)
         shuffle = True
 
-        entity_ids = ensure_list(targets.get("entity_id"))
-        device_ids = ensure_list(targets.get("device_id"))
-        area_ids = ensure_list(targets.get("area_id"))
-        floor_ids = ensure_list(targets.get("floor_id"))
-        label_ids = ensure_list(targets.get("label_id"))
-
-        light_entity_ids = filter_targets(
-            hass,
-            resolve_targets(hass, entity_ids, device_ids, area_ids, floor_ids, label_ids),
-            entity_ids,
-            call.data.get(ATTR_EXCLUDE),
-            call.data.get(ATTR_KEEP_GROUPS),
+        light_entity_ids = lights_of_targets(
+            hass, targets, call.data.get(ATTR_EXCLUDE), call.data.get(ATTR_KEEP_GROUPS)
         )
         light_entity_ids, optional_on, optional_ids = split_optional(
             hass, light_entity_ids, call.data.get(ATTR_OPTIONAL), call.data.get(ATTR_KEEP_GROUPS)
@@ -394,18 +360,8 @@ async def async_setup(hass, config):
         d = get_data(hass)
         targets = call.data.get(ATTR_TARGETS)
 
-        entity_ids = ensure_list(targets.get("entity_id"))
-        device_ids = ensure_list(targets.get("device_id"))
-        area_ids = ensure_list(targets.get("area_id"))
-        floor_ids = ensure_list(targets.get("floor_id"))
-        label_ids = ensure_list(targets.get("label_id"))
-
-        light_entity_ids = filter_targets(
-            hass,
-            resolve_targets(hass, entity_ids, device_ids, area_ids, floor_ids, label_ids),
-            entity_ids,
-            call.data.get(ATTR_EXCLUDE),
-            call.data.get(ATTR_KEEP_GROUPS),
+        light_entity_ids = lights_of_targets(
+            hass, targets, call.data.get(ATTR_EXCLUDE), call.data.get(ATTR_KEEP_GROUPS)
         )
 
         d.music_scenes.release_lights(light_entity_ids)

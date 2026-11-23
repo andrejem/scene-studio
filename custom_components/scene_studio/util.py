@@ -161,6 +161,32 @@ def filter_targets(hass, light_entity_ids, explicit_entity_ids, exclude, keep_gr
     return result
 
 
+# Added by andrejem (2026): the lights of a target, one function for services, saved scenes and panel
+TARGET_KEYS = ("entity_id", "device_id", "area_id", "floor_id", "label_id")
+
+
+def lights_of_targets(hass, targets, exclude=None, keep_groups=None):
+    """The lights a target controls, with the same rules everywhere.
+
+    ``targets`` is a target as Home Assistant writes it. Since Home Assistant 2026.11 it can hold an
+    ``exclude`` block with the same keys (``entity_id``, ``device_id``, ``area_id``, ``floor_id``,
+    ``label_id``): the lights of that block are left out. ``exclude`` is Scene Studio's own list of
+    lights that are not controlled ("Don't control"), ``keep_groups`` the groups controlled as one
+    light; both work as before (see filter_targets).
+    """
+    targets = targets or {}
+    entity_ids = ensure_list(targets.get("entity_id"))
+    lights = resolve_targets(hass, *(ensure_list(targets.get(key)) for key in TARGET_KEYS))
+    excluded = ensure_list(exclude)
+    block = targets.get("exclude")
+    if isinstance(block, dict) and any(block.get(key) for key in TARGET_KEYS):
+        # the excluded groups themselves too, so a group in keep_groups is not added back
+        excluded = excluded + ensure_list(block.get("entity_id")) + resolve_targets(
+            hass, *(ensure_list(block.get(key)) for key in TARGET_KEYS)
+        )
+    return filter_targets(hass, lights, entity_ids, excluded, keep_groups)
+
+
 def light_percent_for(hass, entity_id, light_brightness):
     """Percent from ``light_brightness`` for one light, or None when it has no own value.
 

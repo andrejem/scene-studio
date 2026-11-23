@@ -50,7 +50,9 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     `async_activate_scene` (`__init__.py`); with `follow` it stays active until `release_lights`
     (called next to the one of the music scenes), stop or lights off. `sensor.py` shows the phase
   - `presets.py` - applies a preset to a list of light entities
-  - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start)
+  - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start).
+    `lights_of_targets()` is the one way to get the lights of a target (services, saved scenes, music
+    scenes, panel); it also leaves out the `exclude` block inside a target (Home Assistant 2026.11)
   - `color_management.py`, `color_temperature.py` - color selection and CT fallback
   - `view.py`, `websocket_api.py` - panel registration, static assets, websocket commands
   - `data.py` - runtime data of the config entry (`entry.runtime_data`): saved scenes, dynamic
