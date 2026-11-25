@@ -59,7 +59,7 @@ Saved scenes and dashboards that use the preset show the change right away.
 
 ## Where it is stored
 
-Everything lives in `custom_components/scene_studio/userdata/custom/` (kept by HACS updates):
+Everything lives in `custom_components/scene_studio/userdata/custom/` (kept by updates from the Marketplace or HACS):
 
 - `presets.json` - the same file as for [hand-written custom presets](Custom%20Presets.md).
   Presets from the panel are normal entries; changes of built-in presets are stored under

@@ -43,6 +43,6 @@ Scenes that were imported before are skipped, so the import can be repeated safe
 | `scene.*` entities of saved scenes | the same entities (if taken over) |
 | Preset IDs | unchanged |
 
-When everything works, remove Scene Presets under **Settings → Devices & services** and in HACS.
+When everything works, remove Scene Presets under **Settings → Devices & services** and in the Marketplace (HACS).
 Until then you can go back: delete the imported scenes in Scene Studio, then enable Scene Presets
 again (the areas of its scene entities have to be set again).

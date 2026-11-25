@@ -19,7 +19,7 @@ Everything in the custom presets will simply be added at the end of the lists of
 Please note that there is no validation in place that would prevent you from creating ID conflicts nor is there any
 validation ensuring that the schema of the custom data is correct. Just don't provide any incorrect data.
 
-If I understood the HACS documentation correctly, this folder should survive component updates.<br/>
+If I understood the HACS documentation correctly, this folder should survive updates (Marketplace, formerly HACS).<br/>
 For now though, I'd recommend making backups just to be sure.
 
 ## Example
