@@ -14,6 +14,7 @@ const LEVELS: Array<{key: string, label: "soft_fade_coarse" | "soft_fade_normal"
 ];
 const COLOR_MODES = ["xy", "hs", "rgb", "rgbw", "rgbww", "color_temp"];
 const TRANSITION = 32; // LightEntityFeature.TRANSITION
+const SEGMENT = /_segment_\d+$/;
 
 type Row = {entity_id: string, name: string, area: string, native: boolean};
 
@@ -38,9 +39,9 @@ export const SoftFadeDialog: React.FunctionComponent<{
         return () => window.removeEventListener("keydown", onKey, true);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // color lights, without groups (their members are faded one by one)
+    // color lights, without groups (their members are faded one by one) and segment lights of a strip
     const rows: Array<Row> = useMemo(() => Object.values(hass?.states ?? {})
-        .filter((s: any) => s.entity_id.startsWith("light.") && !s.attributes?.entity_id
+        .filter((s: any) => s.entity_id.startsWith("light.") && !s.attributes?.entity_id && !SEGMENT.test(s.entity_id)
             && (s.attributes?.supported_color_modes ?? []).some((m: string) => COLOR_MODES.includes(m)))
         .map((s: any) => ({
             entity_id: s.entity_id,
@@ -91,7 +92,7 @@ export const SoftFadeDialog: React.FunctionComponent<{
                     <div className={"sp-secondary sp-small"}>{t("soft_fade_help")}</div>
                     <label className={"sp-search"}>
                         <HaIcon icon={"mdi:magnify"} size={20}/>
-                        <input type={"search"} placeholder={t("search")} value={search} onChange={(e) => setSearch(e.target.value)}/>
+                        <input type={"search"} placeholder={t("soft_fade_search")} value={search} onChange={(e) => setSearch(e.target.value)}/>
                     </label>
                     <div className={"sp-list"}>
                         {shown.map(r => {
