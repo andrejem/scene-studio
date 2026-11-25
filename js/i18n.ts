@@ -210,6 +210,15 @@ const EN = {
     gradient_switch: "All colors on gradient lamps",
     gradient_help: "Gradient lamps (e.g. Hue Signe, Play gradient) show all colors of the preset as a gradient. Off: one color like any other lamp.",
     gradient_badge: "gradient",
+    soft_fade: "Soft fade",
+    soft_fade_badge: "soft fade",
+    soft_fade_help: "For lights that jump to a new color instead of fading: Scene Studio sends the color in small steps over the transition time. More steps look smoother but send more commands.",
+    soft_fade_level: "Steps",
+    soft_fade_search: "Search light",
+    soft_fade_coarse: "Coarse",
+    soft_fade_normal: "Normal",
+    soft_fade_fine: "Fine",
+    soft_fade_no_transition: "no own transition",
 };
 
 export type Key = keyof typeof EN;
@@ -424,6 +433,15 @@ const DE: {[K in Key]: string} = {
     gradient_switch: "Alle Farben auf Verlaufslampen",
     gradient_help: "Verlaufslampen (z. B. Hue Signe, Play Gradient) zeigen alle Farben der Vorlage als Verlauf. Aus: eine Farbe wie jede andere Lampe.",
     gradient_badge: "Verlauf",
+    soft_fade: "Weiches Überblenden",
+    soft_fade_badge: "weich",
+    soft_fade_help: "Für Lampen, die auf eine neue Farbe springen statt zu überblenden: Scene Studio schickt die Farbe in kleinen Schritten über die Übergangszeit. Mehr Schritte wirken weicher, schicken aber mehr Befehle.",
+    soft_fade_level: "Schritte",
+    soft_fade_search: "Lampe suchen",
+    soft_fade_coarse: "Grob",
+    soft_fade_normal: "Normal",
+    soft_fade_fine: "Fein",
+    soft_fade_no_transition: "kein eigener Übergang",
 };
 
 export type Translate = (key: Key, vars?: {[name: string]: string | number}) => string;

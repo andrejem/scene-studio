@@ -34,7 +34,7 @@ export type SceneDraft = {
     gradient?: boolean
 };
 
-type SceneLight = {entity_id: string, name: string, optional: boolean, gradient?: boolean};
+type SceneLight = {entity_id: string, name: string, optional: boolean, gradient?: boolean, soft_fade?: string | null};
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -578,6 +578,7 @@ export const SceneEditor: React.FunctionComponent<{
                                                             {light.name}
                                                             {isGroup && <span className={"sp-secondary sp-small"}> · {t("as_one_light")}</span>}
                                                             {light.gradient && gradient && <span className={"sp-secondary sp-small"}> · {t("gradient_badge")}</span>}
+                                                            {light.soft_fade && <span className={"sp-secondary sp-small scene-light-soft"} title={t("soft_fade")}> · {t("soft_fade_badge")}</span>}
                                                         </span>
                                                         <span className={"sp-num small"}>
                                                             <input

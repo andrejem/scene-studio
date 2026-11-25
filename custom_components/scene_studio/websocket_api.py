@@ -15,6 +15,7 @@ from .migrate import async_import_status, async_import_scene_presets
 from .custom_presets import CustomPresetError, save_preset, delete_preset, set_hidden, set_override, reset_override
 from .file_utils import async_reload_preset_data
 from .data import find_data
+from .soft_fade import LEVELS as SOFT_FADE_LEVELS
 
 from homeassistant.util import dt as dt_util
 from .daytime import next_changes, normalize, phase_at
@@ -65,6 +66,32 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             "next": [{"phase": phase, "at": when.isoformat()} for phase, when in daytime.changes(3)],
             "following": daytime.following(),
         }
+
+    # Soft fade (3.8): lights Scene Studio fades itself, with their level (steps per second)
+    @websocket_api.websocket_command({vol.Required("type"): "scene_studio/get_soft_fade"})
+    @websocket_api.callback
+    def ws_get_soft_fade(hass, connection, msg) -> None:
+        data = find_data(hass)
+        connection.send_result(msg["id"], {"lights": data.soft_fade.lights() if data else {}})
+
+    websocket_api.async_register_command(_hass, ws_get_soft_fade)
+
+    @websocket_api.websocket_command({
+        vol.Required("type"): "scene_studio/set_soft_fade",
+        vol.Required("entity_id"): cv.entity_id,
+        vol.Required("level"): vol.Any(None, vol.In(list(SOFT_FADE_LEVELS))),
+    })
+    @websocket_api.require_admin
+    @websocket_api.async_response
+    async def ws_set_soft_fade(hass, connection, msg) -> None:
+        data = find_data(hass)
+        if not msg["entity_id"].startswith("light."):
+            connection.send_error(msg["id"], "invalid_light", "Only lights can be faded")
+            return
+        await data.soft_fade.async_set(msg["entity_id"], msg["level"])
+        connection.send_result(msg["id"], {"lights": data.soft_fade.lights()})
+
+    websocket_api.async_register_command(_hass, ws_set_soft_fade)
 
     @websocket_api.websocket_command({vol.Required("type"): "scene_studio/get_daytime"})
     @websocket_api.callback
@@ -148,6 +175,7 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
                 "name": state.name if state else entity_id,
                 "optional": entity_id in optional_ids,
                 "gradient": bool(gradients and gradients.is_gradient(entity_id)),
+                "soft_fade": data.soft_fade.level_of(entity_id) if data is not None else None,
             })
         result.sort(key=lambda light: light["name"].lower())
         connection.send_result(msg["id"], {"lights": result})
