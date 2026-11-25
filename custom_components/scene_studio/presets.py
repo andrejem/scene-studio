@@ -1,6 +1,7 @@
 # Modified by andrejem (2026): optional brightness per light (light_brightness), runtime presets,
 # gradient lamps get the preset colors as gradient (gradient.py), main and accent lights of music
-# scenes take their colors from their own part of the preset (roles, pools).
+# scenes take their colors from their own part of the preset (roles, pools), soft fade (3.8) for
+# lights that jump to a new color instead of fading (soft_fade.py).
 
 import voluptuous as vol
 import asyncio
@@ -130,6 +131,10 @@ async def apply_preset(
             pass # Nothing to add to the payload. Brightness is already part of it
         else:
             continue # Not turning on the light since it neither supports color nor color temperature and not even dimming
+
+        soft = find_data(hass)
+        if soft is not None and soft.soft_fade.fade(light_params):
+            continue  # Scene Studio fades this light itself, in steps (runs in the background)
 
         task = hass.services.async_call(
             "light",

@@ -111,6 +111,16 @@ button { font: inherit; color: inherit; }
 .sp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* chips */
+/* soft fade (3.8) */
+.sp-sheet.sp-soft-fade { width: min(640px, 100vw); max-width: 100vw; }
+.sp-soft-fade .sp-list-main { gap: 8px; }
+.soft-fade-levels { flex: none; gap: 4px; }
+.sp-soft-fade-open { color: var(--sp-text, var(--primary-text-color)); width: 40px; height: 40px; }
+@media (max-width: 520px) {
+    .soft-fade-row .sp-list-main { flex-wrap: wrap; }
+    .soft-fade-levels { order: 3; width: 100%; }
+}
+
 .sp-chips {
     display: flex;
     gap: 8px;

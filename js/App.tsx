@@ -12,6 +12,7 @@ import {RunningScene, RunningStrip} from "./components/RunningStrip";
 import {ImportBanner, importBrowserSettings} from "./components/ImportBanner";
 import {SceneDraft, SceneEditor, draftFromScene} from "./components/SceneEditor";
 import {DaytimeEditor} from "./components/DaytimeEditor";
+import {SoftFadeDialog} from "./components/SoftFadeDialog";
 import {DAYTIME_PRESET_ID, DEFAULT_TUNABLES, SavedScene, readLocalStorage, sceneAreaId, sceneToTunables, targetsAreaId} from "./tunables";
 
 declare module "react" {
@@ -133,6 +134,9 @@ export const App : React.FunctionComponent<{
         });
     };
 
+    // soft fade (3.8): the lights Scene Studio fades itself, set once for all scenes
+    const [softFadeOpen, setSoftFadeOpen] = useState(false);
+
     return (
         <ha-top-app-bar-fixed>
             <ha-menu-button
@@ -141,6 +145,13 @@ export const App : React.FunctionComponent<{
                 narrow={narrow}
             />
             <div slot="title">Scene Studio</div>
+            {
+                hass?.user?.is_admin &&
+                <button slot="actionItems" className={"sp-icon-btn sp-soft-fade-open"} title={t("soft_fade")} aria-label={t("soft_fade")} onClick={() => setSoftFadeOpen(true)}>
+                    <ha-icon icon={"mdi:transition"}/>
+                </button>
+            }
+            {softFadeOpen && <SoftFadeDialog hass={hass} t={t} onClose={() => setSoftFadeOpen(false)}/>}
 
             <div className={"sp-tabs"} role={"tablist"}>
                 <button role={"tab"} aria-selected={tab !== "presets"} className={"sp-tab" + (tab !== "presets" ? " active" : "")} onClick={() => setTab("scenes")}>

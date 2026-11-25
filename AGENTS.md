@@ -44,6 +44,11 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     per phase, `follow`). `Daytime.async_activate` starts the scene of the phase through
     `async_activate_scene` (`__init__.py`); with `follow` it stays active until `release_lights`
     (called next to the one of the music scenes), stop or lights off. `sensor.py` shows the phase
+  - `soft_fade.py` - soft fade (3.8): lights the user marked (store `scene_studio.soft_fade`, level per
+    light: coarse/normal/fine = 1/2/4 steps per second) get the color of `apply_preset` in steps around
+    the color wheel (`steps_between`). `SoftFade.fade(params)` returns False when the light is not faded
+    (not marked, off, transition < 0.8 s, no color); then the command is sent as before. Steps carry
+    their own `Context`; any other `light` service call for the light ends the fade (`_on_call`)
   - `presets.py` - applies a preset to a list of light entities
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start).
     `lights_of_targets()` is the one way to get the lights of a target (services, saved scenes, music
@@ -75,7 +80,7 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   `App.tsx` tabs and data, `pages/ScenesPage.tsx` saved scenes by room, `pages/PresetApplyPage.tsx`
   presets tab, `components/SceneEditor.tsx` scene editor, `components/Controls.tsx` form controls,
   `components/RunningStrip.tsx` running dynamic scenes, `components/PhotoPresetDialog.tsx` presets
-  from photos, `components/ImportBanner.tsx` import from Scene Presets, `components/DaytimeEditor.tsx`
+  from photos, `components/ImportBanner.tsx` import from Scene Presets, `components/SoftFadeDialog.tsx` the list of lights with soft fade (icon in the header), `components/DaytimeEditor.tsx`
   editor of time of day scenes and the settings of the phases (opened instead of the scene editor for
   the preset Time of day), `tunables.ts` settings ↔
   service calls, `styles.ts` CSS with Home Assistant theme variables, `i18n.ts` texts EN/DE,

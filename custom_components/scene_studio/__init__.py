@@ -7,6 +7,7 @@
 # Import from Scene Presets (import_scene_presets, admins only).
 # Music scenes: colors from the album cover of a media player (music_scenes.py).
 # Gradient lamps get all colors of the preset (gradient.py, option gradient).
+# Soft fade (3.8): marked lights are faded by Scene Studio in steps (soft_fade.py).
 # The integration can be reloaded: everything that runs lives in entry.runtime_data (data.py).
 # activate_saved_scene marks the scene entity as activated (active tile).
 
@@ -30,6 +31,7 @@ from .daytime import Daytime, PHASES, is_daytime_scene
 from .music_scenes import MusicScenes, AUTO_START_OPTIONS, AUTO_START_NEVER, runtime_preset_id, is_music_scene
 from .file_utils import RUNTIME_PRESETS
 from .gradient import GradientLights
+from .soft_fade import SoftFade
 from .data import SceneStudioConfigEntry, SceneStudioData, get_data
 from .file_utils import async_ensure_directories, async_reload_preset_data
 
@@ -496,6 +498,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: SceneStudioConfigEntry) 
     optional_lights = OptionalLights(hass, dynamic_scenes)
     music_scenes = MusicScenes(hass, saved_scenes, dynamic_scenes)
     gradients = GradientLights(hass)
+    soft_fade = SoftFade(hass)
+    await soft_fade.async_load()
 
     async def activate(scene, targets, transition):
         return await async_activate_scene(hass, scene, targets, None, transition)
@@ -510,12 +514,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: SceneStudioConfigEntry) 
         music_scenes=music_scenes,
         gradient=gradients,
         daytime=daytime,
+        soft_fade=soft_fade,
     )
     # stopped in reverse order on unload
     entry.async_on_unload(dynamic_scenes.stop_all)
     entry.async_on_unload(optional_lights.async_shutdown)
     entry.async_on_unload(music_scenes.async_shutdown)
     entry.async_on_unload(daytime.async_shutdown)
+    entry.async_on_unload(soft_fade.async_shutdown)
 
     await async_setup_view(hass)
     async_setup_websocket_api(hass, dynamic_scenes, saved_scenes)
