@@ -31,6 +31,8 @@ Applies a preset once.
 | `light_brightness` | | Brightness in percent per light, e.g. `{light.strip: 20}`; 0 = off at the start |
 | `gradient` | | Default `true`: gradient lamps in Zigbee2MQTT show all colors of the preset ([details](Lights%20of%20a%20scene.md#gradient-lamps)); `false` = one color |
 | `saturation` | | Color intensity −100 … 100, default 0: more vivid (+) or paler (−) colors, the hue stays ([details](Saved%20scenes.md#color-intensity)) |
+| `brighten_deep` | | `true`: lights in deep colors (red, blue, violet) get more brightness, up to 100 % – see [Deep colors](Saved%20scenes.md#deep-colors) |
+| `lighten_deep` | | 0 … 100: white mixed into deep colors so the room stays bright; bright colors stay as they are |
 
 ### `start_dynamic_scene`
 
@@ -43,7 +45,7 @@ Starts a loop that applies the preset with smart shuffled colors again and again
 | `transition` | | Transition of a color change in seconds |
 | `interval_min`, `interval_max` | | Per-light timing: every light waits a random time in this range ([details](Per-light%20timing.md)) |
 | `transition_min`, `transition_max` | | Per-light timing: random transition in this range |
-| `exclude`, `keep_groups`, `optional`, `light_brightness`, `gradient`, `saturation` | | as for `apply_preset` |
+| `exclude`, `keep_groups`, `optional`, `light_brightness`, `gradient`, `saturation`, `brighten_deep`, `lighten_deep` | | as for `apply_preset` |
 
 ### `stop_dynamic_scene`, `stop_dynamic_scenes_for_targets`, `stop_all_dynamic_scenes`
 

@@ -61,3 +61,6 @@ DAYTIME_PRESET_ID = "d4a1f7c0-6b3e-4e52-8c1d-2f9a7b5e0c63"
 ATTR_GRADIENT = "gradient"
 # color intensity of a scene: -100 (pale, towards white) .. 0 (as the preset) .. 100 (vivid)
 ATTR_SATURATION = "saturation"
+# Added by andrejem (2026): deep colors (3.9) - more brightness / some white for colors that give little light
+ATTR_BRIGHTEN_DEEP = "brighten_deep"
+ATTR_LIGHTEN_DEEP = "lighten_deep"

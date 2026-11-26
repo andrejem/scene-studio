@@ -216,6 +216,39 @@ export const SaturationField: React.FunctionComponent<{
     );
 };
 
+// Added by andrejem (2026): deep colors (3.9). Deep red, blue or violet give much less light than bright
+// colors at the same brightness: more brightness for them (switch) and/or some white mixed in (slider).
+export const DeepColorsField: React.FunctionComponent<{
+    t: Translate,
+    brighten: boolean,
+    lighten: number,
+    onBrighten: (value: boolean) => void,
+    onLighten: (value: number) => void
+}> = ({t, brighten, lighten, onBrighten, onLighten}) => {
+    const v = Math.round(lighten || 0);
+    return (
+        <div className={"sp-field sp-deep-colors"}>
+            <span className={"sp-field-label"}>{t("deep_colors")}</span>
+            <SwitchRow label={t("deep_brighten")} value={brighten} onChange={onBrighten} className={"deep-brighten"}/>
+            <div className={"sp-field-head"}>
+                <span>{t("deep_lighten")}</span>
+                <span className={"sp-secondary"}>{v ? <span className={"sp-strong sp-text"}>{v} %</span> : t("deep_off")}</span>
+            </div>
+            <input
+                type={"range"}
+                className={"sp-range deep-lighten" + (v ? "" : " off")}
+                min={0}
+                max={100}
+                step={5}
+                value={v}
+                aria-label={t("deep_lighten")}
+                onChange={(e) => onLighten(Number(e.target.value))}
+                style={{background: "linear-gradient(90deg, #3a1a6e, #8a7ab8 60%, #eee)"}}
+            />
+        </div>
+    );
+};
+
 /** Music scenes: which colors of the cover count, from the largest areas (0) to the most vivid ones (100). */
 export const FocusField: React.FunctionComponent<{
     t: Translate,

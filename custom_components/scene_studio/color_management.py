@@ -101,3 +101,60 @@ def adjust_saturation(colors: List[Tuple[float, float]], amount) -> List[Tuple[f
         nx, ny = color_util.color_RGB_to_xy(round(r * 255), round(g * 255), round(b * 255))
         adjusted.append((round(nx, 4), round(ny, 4)))
     return adjusted
+
+
+
+# Added by andrejem (2026): deep colors (3.9). Deep colors (red, blue, violet) give much less light than
+# bright ones (yellow, light blue) at the same brightness of the lamp; with music scenes on the ceiling
+# lights a room can get dark when the album changes. Two options of a scene, both off by default:
+# - brighten: the lamp gets more brightness (up to 100 %), the color stays as it is;
+# - lighten (0-100): white is mixed into the color - with brighten only for what the brightness
+#   could not make up.
+# The goal is the light of a color with DEEP_COLOR_LEVEL (relative luminance, white = 1); colors that
+# give that much light already are not touched, and the hue never changes.
+DEEP_COLOR_LEVEL = 0.4
+
+
+def _to_linear(value: float) -> float:
+    return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+
+
+def _to_srgb(value: float) -> float:
+    return value * 12.92 if value <= 0.0031308 else 1.055 * value ** (1 / 2.4) - 0.055
+
+
+def light_output(xy) -> float:
+    """How much light a lamp gives in this color compared to white (0..1), at the same brightness."""
+    from homeassistant.util import color as color_util
+
+    r, g, b = (_to_linear(c / 255) for c in color_util.color_xy_to_RGB(*xy))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def deep_color(xy, brightness, brighten=False, lighten=0):
+    """(xy, brightness) for a lamp in this color with the options for deep colors (see above).
+
+    ``brightness`` is 0..255 or None (unknown: then only lighten works)."""
+    if not brighten and not lighten:
+        return xy, brightness
+    from homeassistant.util import color as color_util
+
+    r, g, b = (_to_linear(c / 255) for c in color_util.color_xy_to_RGB(*xy))
+    output = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    if output >= DEEP_COLOR_LEVEL or output <= 0:
+        return xy, brightness
+    new_brightness = brightness
+    if brighten and brightness:
+        new_brightness = min(255, max(brightness, round(brightness * DEEP_COLOR_LEVEL / output)))
+    share = max(0.0, min(100.0, float(lighten or 0))) / 100
+    if share <= 0:
+        return xy, new_brightness
+    # the light still missing after the brightness, as output the color would need at the new brightness
+    needed = DEEP_COLOR_LEVEL * (brightness / new_brightness) if brightness and new_brightness else DEEP_COLOR_LEVEL
+    target = output + (min(1.0, needed) - output) * share
+    if target <= output + 0.005:  # the brightness made up for it (rounding aside)
+        return xy, new_brightness
+    white = (target - output) / (1 - output)  # share of white that gives the target output
+    mixed = [round(_to_srgb(c * (1 - white) + white) * 255) for c in (r, g, b)]
+    nx, ny = color_util.color_RGB_to_xy(*mixed)
+    return (round(nx, 4), round(ny, 4)), new_brightness
