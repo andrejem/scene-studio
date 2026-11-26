@@ -12,7 +12,7 @@ import HaIcon from "./hass/building_blocks/HaIcon";
 import {HaTargetSelectorValue} from "./hass/selectors/HaTargetSelector";
 import {Translate} from "../i18n";
 import {Preset} from "../types";
-import {BrightnessField, Collapsible, FocusField, MoreOptions, SaturationField, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
+import {BrightnessField, Collapsible, DeepColorsField, FocusField, MoreOptions, SaturationField, Segmented, SwitchRow, TargetField, previewBrightness} from "./Controls";
 import {PresetTile} from "./PresetTile";
 import {
     DAYTIME_PRESET_ID, DEFAULT_TUNABLES, MEDIA_PLAYER_ANY, MUSIC_PRESET_ID, MusicSettings, SavedScene, SetTunable, Tunables, areaName, hasTargets, newId, presetImage,
@@ -541,6 +541,13 @@ export const SceneEditor: React.FunctionComponent<{
                             />
 
                             <SaturationField t={t} value={tun.saturation} onChange={(v) => set("saturation", v)}/>
+                            <DeepColorsField
+                                t={t}
+                                brighten={tun.brightenDeep}
+                                lighten={tun.lightenDeep}
+                                onBrighten={(v) => set("brightenDeep", v)}
+                                onLighten={(v) => set("lightenDeep", v)}
+                            />
 
                             <Collapsible
                                 label={t("more_options")}

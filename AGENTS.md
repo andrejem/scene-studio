@@ -53,7 +53,8 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start).
     `lights_of_targets()` is the one way to get the lights of a target (services, saved scenes, music
     scenes, panel); it also leaves out the `exclude` block inside a target (Home Assistant 2026.11)
-  - `color_management.py`, `color_temperature.py` - color selection and CT fallback
+  - `color_management.py`, `color_temperature.py` - color selection and CT fallback; `deep_color()` (3.9):
+    options `brighten_deep` / `lighten_deep` per scene, applied per light in `apply_preset`
   - `view.py`, `websocket_api.py` - panel registration, static assets, websocket commands
   - `data.py` - runtime data of the config entry (`entry.runtime_data`): saved scenes, dynamic
     scenes, optional lights, music scenes, gradient lamps. Created in `async_setup_entry`, stopped on

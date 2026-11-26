@@ -12,6 +12,9 @@ export const DEFAULT_TUNABLES = {
     customTransitionValue: 60,
     // color intensity (3.5): -100 paler .. 0 as the preset .. 100 vivid
     saturation: 0,
+    // deep colors (3.9): more brightness and/or some white for colors that give little light
+    brightenDeep: false,
+    lightenDeep: 0,
 
     dynamic: false,
     dynamicTransitionValue: 45,
@@ -92,6 +95,8 @@ export function tunablesToCall(presetId: string, targets: HaTargetSelectorValue,
         targets: targets,
         brightness: tun.customBrightness ? tun.customBrightnessValue : undefined,
         saturation: tun.saturation ? Math.round(tun.saturation) : undefined,
+        brighten_deep: tun.brightenDeep ? true : undefined,
+        lighten_deep: tun.lightenDeep ? Math.round(tun.lightenDeep) : undefined,
     };
     let service: string;
 
@@ -136,6 +141,8 @@ export function sceneToTunables(scene: SavedScene): Tunables {
         tun.customBrightnessValue = scene.brightness;
     }
     tun.saturation = has("saturation") ? Number(scene.saturation) : 0;
+    tun.brightenDeep = !!scene.brighten_deep;
+    tun.lightenDeep = has("lighten_deep") ? Number(scene.lighten_deep) : 0;
     tun.dynamic = !!scene.dynamic;
     if (scene.dynamic) {
         tun.dynamicPerLight = ["interval_min", "interval_max", "transition_min", "transition_max"].some(has);

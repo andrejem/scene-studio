@@ -55,6 +55,8 @@ APPLY_PRESET_SCHEMA = vol.Schema({
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
     vol.Optional(ATTR_GRADIENT): cv.boolean,
     vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
+    vol.Optional(ATTR_BRIGHTEN_DEEP): cv.boolean,
+    vol.Optional(ATTR_LIGHTEN_DEEP): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
 })
 
 START_DYNAMIC_SCENE_SCHEMA = vol.Schema({
@@ -73,6 +75,8 @@ START_DYNAMIC_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
     vol.Optional(ATTR_GRADIENT): cv.boolean,
     vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
+    vol.Optional(ATTR_BRIGHTEN_DEEP): cv.boolean,
+    vol.Optional(ATTR_LIGHTEN_DEEP): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
 })
 
 
@@ -128,6 +132,8 @@ SAVE_SCENE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_LIGHT_BRIGHTNESS): LIGHT_BRIGHTNESS,
     vol.Optional(ATTR_GRADIENT): cv.boolean,
     vol.Optional(ATTR_SATURATION): vol.All(vol.Coerce(float), vol.Range(min=-100, max=100)),
+    vol.Optional(ATTR_BRIGHTEN_DEEP): cv.boolean,
+    vol.Optional(ATTR_LIGHTEN_DEEP): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
     vol.Optional("music"): MUSIC_SCHEMA,
     vol.Optional("daytime"): DAYTIME_SCHEMA,
 })
@@ -256,11 +262,15 @@ async def async_setup(hass, config):
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
             gradient=call.data.get(ATTR_GRADIENT, True),
             saturation=call.data.get(ATTR_SATURATION),
+            brighten_deep=call.data.get(ATTR_BRIGHTEN_DEEP),
+            lighten_deep=call.data.get(ATTR_LIGHTEN_DEEP),
         )
         d.optional_lights.register(
             optional_ids, light_entity_ids, preset_id, brightness_override,
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
             saturation=call.data.get(ATTR_SATURATION),
+            brighten_deep=call.data.get(ATTR_BRIGHTEN_DEEP),
+            lighten_deep=call.data.get(ATTR_LIGHTEN_DEEP),
         )
 
 
@@ -307,6 +317,8 @@ async def async_setup(hass, config):
             ATTR_LIGHT_BRIGHTNESS: call.data.get(ATTR_LIGHT_BRIGHTNESS),
             ATTR_GRADIENT: call.data.get(ATTR_GRADIENT, True),
             ATTR_SATURATION: call.data.get(ATTR_SATURATION),
+            ATTR_BRIGHTEN_DEEP: call.data.get(ATTR_BRIGHTEN_DEEP),
+            ATTR_LIGHTEN_DEEP: call.data.get(ATTR_LIGHTEN_DEEP),
         }
 
         range_attrs = (ATTR_INTERVAL_MIN, ATTR_INTERVAL_MAX, ATTR_TRANSITION_MIN, ATTR_TRANSITION_MAX)
@@ -321,6 +333,8 @@ async def async_setup(hass, config):
             optional_ids, light_entity_ids, preset_id, brightness_override, result["id"],
             light_brightness=call.data.get(ATTR_LIGHT_BRIGHTNESS),
             saturation=call.data.get(ATTR_SATURATION),
+            brighten_deep=call.data.get(ATTR_BRIGHTEN_DEEP),
+            lighten_deep=call.data.get(ATTR_LIGHTEN_DEEP),
         )
         return result
 

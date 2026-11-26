@@ -1,7 +1,7 @@
 # Modified by andrejem (2026): optional brightness per light (light_brightness), runtime presets,
 # gradient lamps get the preset colors as gradient (gradient.py), main and accent lights of music
 # scenes take their colors from their own part of the preset (roles, pools), soft fade (3.8) for
-# lights that jump to a new color instead of fading (soft_fade.py).
+# lights that jump to a new color instead of fading (soft_fade.py), options for deep colors (3.9, deep_color).
 
 import voluptuous as vol
 import asyncio
@@ -38,6 +38,8 @@ async def apply_preset(
     light_brightness=None,
     gradient=True,
     saturation=None,
+    brighten_deep=None,
+    lighten_deep=None,
 ):
     preset_data = RUNTIME_PRESETS.get(preset_id)
     for preset in [] if preset_data else PRESET_DATA.get("presets", []):
@@ -124,7 +126,10 @@ async def apply_preset(
             continue
 
         if color_support:
-            light_params["xy_color"] = next_color
+            # deep colors (3.9): more brightness and/or some white for colors that give little light
+            light_params["xy_color"], light_params["brightness"] = deep_color(
+                next_color, light_params["brightness"], brighten_deep, lighten_deep,
+            )
         elif temp_support:
             light_params["color_temp_kelvin"] = find_closest_ct_match(next_color[0], next_color[1])
         elif brightness_support:

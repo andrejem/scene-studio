@@ -91,6 +91,21 @@ apply_preset:
           step: 5
           unit_of_measurement: "%"
           mode: slider
+    brighten_deep:
+      name: "Brighten deep colors"
+      description: "Optional, default false. Lights in colors that give little light (deep red, blue, violet) get more brightness, up to 100 %. The color stays."
+      selector:
+        boolean:
+    lighten_deep:
+      name: "Lighten deep colors"
+      description: "Optional, 0 to 100, default 0. Mixes white into colors that give little light, so the room stays bright; bright colors are not changed. With brighten_deep only what the brightness could not make up."
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+          mode: slider
 
 get_dynamic_scenes:
   name: "Get dynamic scenes"
@@ -217,6 +232,21 @@ start_dynamic_scene:
       selector:
         number:
           min: -100
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+          mode: slider
+    brighten_deep:
+      name: "Brighten deep colors"
+      description: "Optional, default false. Lights in colors that give little light (deep red, blue, violet) get more brightness, up to 100 %. The color stays."
+      selector:
+        boolean:
+    lighten_deep:
+      name: "Lighten deep colors"
+      description: "Optional, 0 to 100, default 0. Mixes white into colors that give little light, so the room stays bright; bright colors are not changed. With brighten_deep only what the brightness could not make up."
+      selector:
+        number:
+          min: 0
           max: 100
           step: 5
           unit_of_measurement: "%"
@@ -384,6 +414,21 @@ save_scene:
       selector:
         number:
           min: -100
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+          mode: slider
+    brighten_deep:
+      name: "Brighten deep colors"
+      description: "Optional, default false. Lights in colors that give little light (deep red, blue, violet) get more brightness, up to 100 %. The color stays."
+      selector:
+        boolean:
+    lighten_deep:
+      name: "Lighten deep colors"
+      description: "Optional, 0 to 100, default 0. Mixes white into colors that give little light, so the room stays bright; bright colors are not changed. With brighten_deep only what the brightness could not make up."
+      selector:
+        number:
+          min: 0
           max: 100
           step: 5
           unit_of_measurement: "%"

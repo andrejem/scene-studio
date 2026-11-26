@@ -96,3 +96,24 @@ presets tab):
 The hue never changes. It also works for dynamic scenes, gradient lamps, lights that join later and
 [music scenes](Music%20scenes.md) (on top of the cover colors). In services it is the field
 `saturation` (−100 … 100), see [Services](Services.md).
+
+## Deep colors
+
+Deep red, blue or violet give much less light than yellow or light blue at the same brightness of the
+lamp. With colorful scenes on the ceiling lights – above all [music scenes](Music%20scenes.md), where
+the next album can be dark red – a room can get dark. Below the color intensity, **Deep colors** has
+two settings, both off by default:
+
+| Setting | What it does |
+|---|---|
+| **Brighter for deep colors** | Lights in a deep color get more brightness, up to 100 %. The color stays as it is. |
+| **Lighten deep colors** (off … 100 %) | Mixes white into deep colors, so they give more light – a deep blue becomes a lighter blue. The higher, the lighter. |
+
+Only colors that give little light change; bright colors stay as they are, and the hue never changes.
+With both on, the brightness comes first and white is only mixed in for what the brightness could not
+make up (when the light is at 100 % already). The brightness of a scene at 100 % leaves nothing to
+add, then only lightening helps.
+
+It works for every scene – presets, dynamic scenes, music scenes, lights that join later. Lights that
+only do white tones and gradient lamps are not changed. In services the fields are `brighten_deep`
+(true/false) and `lighten_deep` (0 … 100), see [Services](Services.md).

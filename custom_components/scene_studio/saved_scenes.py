@@ -30,6 +30,8 @@ SCENE_SETTING_KEYS = (
     "transition_max",
     "exclude",
     "saturation",
+    "brighten_deep",
+    "lighten_deep",
     "keep_groups",
     "optional",
     "light_brightness",

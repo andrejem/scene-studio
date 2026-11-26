@@ -14,7 +14,7 @@ import HaIcon from "../components/hass/building_blocks/HaIcon";
 import {Category, Preset} from "../types";
 import {Translate} from "../i18n";
 import {PhotoPresetDialog} from "../components/PhotoPresetDialog";
-import {BrightnessField, Collapsible, MoreOptions, SaturationField, Segmented, TargetField, previewBrightness, resetTunables, useTargetLights} from "../components/Controls";
+import {BrightnessField, Collapsible, MoreOptions, DeepColorsField, SaturationField, Segmented, TargetField, previewBrightness, resetTunables, useTargetLights} from "../components/Controls";
 import {DAYTIME_PRESET_ID, DEFAULT_TUNABLES, MUSIC_PRESET_ID, SetTunable, Tunables, hasTargets, presetImage, targetSummary, tunablesToCall} from "../tunables";
 
 export const PresetApplyPage: React.FunctionComponent<{
@@ -42,6 +42,8 @@ export const PresetApplyPage: React.FunctionComponent<{
     const [customBrightness, setCustomBrightness] = useLocalStorage<boolean>("scene_studio_apply_page_custom_brightness", DEFAULT_TUNABLES.customBrightness);
     const [customBrightnessValue, setCustomBrightnessValue] = useLocalStorage<number>("scene_studio_apply_page_custom_brightness_value", DEFAULT_TUNABLES.customBrightnessValue);
     const [saturation, setSaturation] = useLocalStorage<number>("scene_studio_apply_page_saturation", DEFAULT_TUNABLES.saturation);
+    const [brightenDeep, setBrightenDeep] = useLocalStorage<boolean>("scene_studio_apply_page_brighten_deep", DEFAULT_TUNABLES.brightenDeep);
+    const [lightenDeep, setLightenDeep] = useLocalStorage<number>("scene_studio_apply_page_lighten_deep", DEFAULT_TUNABLES.lightenDeep);
     const [customTransition, setCustomTransition] = useLocalStorage<boolean>("scene_studio_apply_page_custom_transition", DEFAULT_TUNABLES.customTransition);
     const [customTransitionValue, setCustomTransitionValue] = useLocalStorage<number>("scene_studio_apply_page_custom_transition_value", DEFAULT_TUNABLES.customTransitionValue);
     const [dynamic, setDynamic] = useLocalStorage<boolean>("scene_studio_apply_page_dynamic", DEFAULT_TUNABLES.dynamic);
@@ -88,13 +90,14 @@ export const PresetApplyPage: React.FunctionComponent<{
     const targetLights = useTargetLights(hass, targets);
 
     const tun: Tunables = {
-        shuffle, smartShuffle, customBrightness, customBrightnessValue, saturation, customTransition, customTransitionValue,
+        shuffle, smartShuffle, customBrightness, customBrightnessValue, saturation, brightenDeep, lightenDeep, customTransition, customTransitionValue,
         dynamic, dynamicTransitionValue, dynamicIntervalValue, dynamicPerLight,
         dynamicIntervalMin, dynamicIntervalMax, dynamicTransitionMin, dynamicTransitionMax
     };
     const setters: {[K in keyof Tunables]: (v: any) => void} = {
         shuffle: setShuffle, smartShuffle: setSmartShuffle,
         customBrightness: setCustomBrightness, customBrightnessValue: setCustomBrightnessValue, saturation: setSaturation,
+        brightenDeep: setBrightenDeep, lightenDeep: setLightenDeep,
         customTransition: setCustomTransition, customTransitionValue: setCustomTransitionValue,
         dynamic: setDynamic, dynamicTransitionValue: setDynamicTransitionValue, dynamicIntervalValue: setDynamicIntervalValue,
         dynamicPerLight: setDynamicPerLight, dynamicIntervalMin: setDynamicIntervalMin, dynamicIntervalMax: setDynamicIntervalMax,
@@ -222,6 +225,7 @@ export const PresetApplyPage: React.FunctionComponent<{
                 />
 
                 <SaturationField t={t} value={saturation} onChange={setSaturation}/>
+                <DeepColorsField t={t} brighten={brightenDeep} lighten={lightenDeep} onBrighten={setBrightenDeep} onLighten={setLightenDeep}/>
 
                 <Collapsible
                     label={t("more_options")}

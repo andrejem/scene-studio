@@ -737,6 +737,8 @@ class MusicScenes:
                 light_brightness={k: v for k, v in (settings or {}).items() if v > 0} or None,
                 gradient=scene.get("gradient", True),
                 saturation=scene.get("saturation"),
+                brighten_deep=scene.get("brighten_deep"),
+                lighten_deep=scene.get("lighten_deep"),
             )
         finally:
             _INTERNAL.reset(token)
