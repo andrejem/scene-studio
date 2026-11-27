@@ -44,11 +44,13 @@ be installed next to it; `migrate.py` imports data from Scene Presets (domain `s
     per phase, `follow`). `Daytime.async_activate` starts the scene of the phase through
     `async_activate_scene` (`__init__.py`); with `follow` it stays active until `release_lights`
     (called next to the one of the music scenes), stop or lights off. `sensor.py` shows the phase
-  - `soft_fade.py` - soft fade (3.8): lights the user marked (store `scene_studio.soft_fade`, level per
-    light: coarse/normal/fine = 1/2/4 steps per second) get the color of `apply_preset` in steps around
-    the color wheel (`steps_between`). `SoftFade.fade(params)` returns False when the light is not faded
-    (not marked, off, transition < 0.8 s, no color); then the command is sent as before. Steps carry
-    their own `Context`; any other `light` service call for the light ends the fade (`_on_call`)
+  - `soft_fade.py` - soft fade (3.8, 3.10): lights the user marked (store `scene_studio.soft_fade`: steps
+    per second per light 1-20, `smoothness` coarse/normal/fine for all; the levels of 3.8 are read as
+    1/2/4, `rate_of`) get the color of `apply_preset` in steps around the color wheel (`steps_between`,
+    eased in and out, no step larger than the normal step × smoothness). `SoftFade.fade(params)` returns
+    False when the light is not faded (not marked, off, transition < 0.8 s, no color); then the command
+    is sent as before. Steps carry their own `Context`; any other `light` service call for the light ends
+    the fade (`_on_call`)
   - `presets.py` - applies a preset to a list of light entities
   - `util.py` - target resolution, exclude / keep_groups, brightness per light (0 % = off at start).
     `lights_of_targets()` is the one way to get the lights of a target (services, saved scenes, music

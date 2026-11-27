@@ -2,8 +2,10 @@
 # once, whatever transition they get. For lights the user marks, Scene Studio does the fade itself: it
 # sends the color in small steps over the transition time. The steps go around the color wheel (hue,
 # saturation, brightness), not through RGB, so the middle of a fade keeps its brightness and color.
-# A light is marked once for all scenes, with one of three levels (steps per second). Any other command
-# to the light (another scene, a switch, an automation) ends a running fade at once.
+# A light is marked once for all scenes, with its steps per second (3.10: 1-20, before three levels).
+# How fine a single step may be is one setting for all lights (smoothness). The steps start and end
+# gently (ease in and out), so the eye notices the steps less. Any other command to the light (another
+# scene, a switch, an automation) ends a running fade at once.
 
 from __future__ import annotations
 
@@ -23,8 +25,12 @@ _LOGGER = logging.getLogger(__name__)
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}.soft_fade"
 
-# steps per second
+# steps per second of a light; up to 3.9 a level, kept as its number of steps
+MIN_RATE, MAX_RATE, DEFAULT_RATE = 1, 20, 2
 LEVELS = {"fine": 4, "normal": 2, "coarse": 1}
+# smoothness: how large one step may be, as a factor of the normal step (STEP_HUE ...)
+SMOOTHNESS = {"fine": 0.5, "normal": 1.0, "coarse": 2.5}  # largest step 1°, 2°, 5° of hue
+DEFAULT_SMOOTHNESS = "normal"
 # below this a fade is not worth it: the light gets the color at once, as before
 MIN_DURATION = 0.8
 # changes smaller than this need no step of their own (degrees of hue, % saturation, brightness 0..255)
@@ -45,12 +51,29 @@ def hs_of_params(params: dict, state_attrs: dict | None = None):
     return None
 
 
-def steps_between(start, end, duration: float, rate: int):
+def rate_of(value) -> int | None:
+    """Steps per second from a stored or sent value (a number, or a level of 3.8/3.9)."""
+    if value in LEVELS:
+        return LEVELS[value]
+    try:
+        rate = int(value)
+    except (TypeError, ValueError):
+        return None
+    return max(MIN_RATE, min(MAX_RATE, rate))
+
+
+def _ease(f: float) -> float:
+    """Gentle start and end: small steps at both ends, larger ones in the middle."""
+    return (1 - math.cos(math.pi * f)) / 2
+
+
+def steps_between(start, end, duration: float, rate: int, smoothness: float = 1.0):
     """The steps of a fade: [(hue, saturation, brightness), ...], the last one is the target.
 
     ``start`` and ``end`` are (hue 0..360, saturation 0..100, brightness 0..255); brightness may be
     None (unchanged). Hue takes the shorter way around the wheel. The number of steps follows the
-    duration and the rate, but a small change gets fewer steps.
+    duration and the rate (steps per second), but a small change gets fewer steps: no step is larger
+    than the normal step times ``smoothness`` (the largest steps are in the middle of the fade).
     """
     (h0, s0, b0), (h1, s1, b1) = start, end
     dh = ((h1 - h0 + 180) % 360) - 180
@@ -60,11 +83,12 @@ def steps_between(start, end, duration: float, rate: int):
     elif s1 < 1:
         dh = 0  # to white: keep the hue while the color fades out
     db = (b1 - b0) if b0 is not None and b1 is not None else 0
-    needed = max(abs(dh) / STEP_HUE, abs(s1 - s0) / STEP_SATURATION, abs(db) / STEP_BRIGHTNESS)
-    count = max(1, min(int(duration * rate), math.ceil(needed)))
+    needed = max(abs(dh) / STEP_HUE, abs(s1 - s0) / STEP_SATURATION, abs(db) / STEP_BRIGHTNESS) / smoothness
+    # with easing the middle steps are pi/2 times the average step
+    count = max(1, min(int(duration * rate), math.ceil(needed * math.pi / 2)))
     steps = []
     for k in range(1, count + 1):
-        f = k / count
+        f = _ease(k / count)
         brightness = None if b1 is None else (b1 if b0 is None else round(b0 + db * f))
         steps.append((round((h0 + dh * f) % 360, 2), round(s0 + (s1 - s0) * f, 2), brightness))
     return steps
@@ -76,31 +100,50 @@ class SoftFade:
     def __init__(self, hass: HomeAssistant):
         self.hass = hass
         self._store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
-        self._lights: dict[str, str] = {}  # entity_id -> level
+        self._lights: dict[str, int] = {}  # entity_id -> steps per second
+        self._smoothness = DEFAULT_SMOOTHNESS
         self._running: dict[str, asyncio.Task] = {}
         self._own: set[str] = set()  # context ids of the steps, so they do not end their own fade
         self._unsub = None
 
     async def async_load(self):
         data = await self._store.async_load() or {}
-        self._lights = {e: l for e, l in (data.get("lights") or {}).items() if l in LEVELS}
+        lights = {e: rate_of(v) for e, v in (data.get("lights") or {}).items()}
+        self._lights = {e: r for e, r in lights.items() if r is not None}
+        if data.get("smoothness") in SMOOTHNESS:
+            self._smoothness = data["smoothness"]
         self._unsub = self.hass.bus.async_listen(EVENT_CALL_SERVICE, self._on_call)
 
     def lights(self) -> dict:
         return dict(self._lights)
 
-    def level_of(self, entity_id: str) -> str | None:
+    def smoothness(self) -> str:
+        return self._smoothness
+
+    def level_of(self, entity_id: str) -> int | None:
+        """Steps per second of a light, None if Scene Studio does not fade it."""
         return self._lights.get(entity_id)
 
-    async def async_set(self, entity_id: str, level: str | None):
-        if level is None:
+    async def async_set(self, entity_id: str, rate):
+        """Steps per second of a light (1-20, or a level of 3.8/3.9); None: not faded any more."""
+        if rate is None:
             self._lights.pop(entity_id, None)
             self.cancel(entity_id)
-        elif level in LEVELS:
-            self._lights[entity_id] = level
         else:
-            raise ValueError(f"Unknown level {level}")
-        await self._store.async_save({"lights": self._lights})
+            value = rate_of(rate)
+            if value is None:
+                raise ValueError(f"Unknown rate {rate}")
+            self._lights[entity_id] = value
+        await self._async_save()
+
+    async def async_set_smoothness(self, smoothness: str):
+        if smoothness not in SMOOTHNESS:
+            raise ValueError(f"Unknown smoothness {smoothness}")
+        self._smoothness = smoothness
+        await self._async_save()
+
+    async def _async_save(self):
+        await self._store.async_save({"lights": self._lights, "smoothness": self._smoothness})
 
     @callback
     def cancel(self, entity_id: str):
@@ -139,8 +182,8 @@ class SoftFade:
         change); the caller then sends the command as before. A fade already running on the light ends.
         """
         entity_id = params.get("entity_id")
-        level = self._lights.get(entity_id) if isinstance(entity_id, str) else None
-        if level is None:
+        rate = self._lights.get(entity_id) if isinstance(entity_id, str) else None
+        if rate is None:
             return False
         self.cancel(entity_id)
         duration = float(params.get("transition") or 0)
@@ -153,7 +196,7 @@ class SoftFade:
             return False
         start = (float(current[0]), float(current[1]), state.attributes.get("brightness"))
         end = (target[0], target[1], params.get("brightness"))
-        steps = steps_between(start, end, duration, LEVELS[level])
+        steps = steps_between(start, end, duration, rate, SMOOTHNESS[self._smoothness])
         if len(steps) <= 1:
             return False
         self._running[entity_id] = self.hass.async_create_background_task(

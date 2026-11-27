@@ -15,7 +15,8 @@ from .migrate import async_import_status, async_import_scene_presets
 from .custom_presets import CustomPresetError, save_preset, delete_preset, set_hidden, set_override, reset_override
 from .file_utils import async_reload_preset_data
 from .data import find_data
-from .soft_fade import LEVELS as SOFT_FADE_LEVELS
+from .soft_fade import LEVELS as SOFT_FADE_LEVELS, MAX_RATE as SOFT_FADE_MAX, MIN_RATE as SOFT_FADE_MIN
+from .soft_fade import SMOOTHNESS as SOFT_FADE_SMOOTHNESS
 
 from homeassistant.util import dt as dt_util
 from .daytime import next_changes, normalize, phase_at
@@ -67,19 +68,24 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
             "following": daytime.following(),
         }
 
-    # Soft fade (3.8): lights Scene Studio fades itself, with their level (steps per second)
+    # Soft fade (3.8, 3.10): lights Scene Studio fades itself with their steps per second, and the smoothness
     @websocket_api.websocket_command({vol.Required("type"): "scene_studio/get_soft_fade"})
     @websocket_api.callback
     def ws_get_soft_fade(hass, connection, msg) -> None:
         data = find_data(hass)
-        connection.send_result(msg["id"], {"lights": data.soft_fade.lights() if data else {}})
+        connection.send_result(msg["id"], {
+            "lights": data.soft_fade.lights() if data else {},
+            "smoothness": data.soft_fade.smoothness() if data else "normal",
+        })
 
     websocket_api.async_register_command(_hass, ws_get_soft_fade)
 
     @websocket_api.websocket_command({
         vol.Required("type"): "scene_studio/set_soft_fade",
         vol.Required("entity_id"): cv.entity_id,
-        vol.Required("level"): vol.Any(None, vol.In(list(SOFT_FADE_LEVELS))),
+        # steps per second; "level" (coarse/normal/fine) of 3.8/3.9 still works
+        vol.Exclusive("rate", "rate"): vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=SOFT_FADE_MIN, max=SOFT_FADE_MAX))),
+        vol.Exclusive("level", "rate"): vol.Any(None, vol.In(list(SOFT_FADE_LEVELS))),
     })
     @websocket_api.require_admin
     @websocket_api.async_response
@@ -88,10 +94,23 @@ def async_setup_websocket_api(_hass, dynamic_scene_manager, saved_scene_store=No
         if not msg["entity_id"].startswith("light."):
             connection.send_error(msg["id"], "invalid_light", "Only lights can be faded")
             return
-        await data.soft_fade.async_set(msg["entity_id"], msg["level"])
+        await data.soft_fade.async_set(msg["entity_id"], msg.get("rate", msg.get("level")))
         connection.send_result(msg["id"], {"lights": data.soft_fade.lights()})
 
     websocket_api.async_register_command(_hass, ws_set_soft_fade)
+
+    @websocket_api.websocket_command({
+        vol.Required("type"): "scene_studio/set_soft_fade_smoothness",
+        vol.Required("smoothness"): vol.In(list(SOFT_FADE_SMOOTHNESS)),
+    })
+    @websocket_api.require_admin
+    @websocket_api.async_response
+    async def ws_set_soft_fade_smoothness(hass, connection, msg) -> None:
+        data = find_data(hass)
+        await data.soft_fade.async_set_smoothness(msg["smoothness"])
+        connection.send_result(msg["id"], {"smoothness": data.soft_fade.smoothness()})
+
+    websocket_api.async_register_command(_hass, ws_set_soft_fade_smoothness)
 
     @websocket_api.websocket_command({vol.Required("type"): "scene_studio/get_daytime"})
     @websocket_api.callback

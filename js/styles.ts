@@ -116,7 +116,10 @@ button { font: inherit; color: inherit; }
 .sp-soft-fade .sp-list-main { gap: 8px; }
 .soft-fade-row .sp-grow { flex: 1 1 0; min-width: 0; }
 .soft-fade-switch { flex: none; }
-.soft-fade-levels { flex: none; gap: 4px; }
+.soft-fade-levels { flex: 0 1 220px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.soft-fade-rate { flex: 1 1 auto; min-width: 80px; }
+.soft-fade-rate-value { flex: none; width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+.soft-fade-smoothness .sp-chips { gap: 4px; }
 .sp-soft-fade-open { color: var(--sp-text, var(--primary-text-color)); width: 40px; height: 40px; }
 @media (max-width: 520px) {
     .soft-fade-row .sp-list-main { flex-wrap: wrap; }

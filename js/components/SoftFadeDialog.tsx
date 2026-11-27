@@ -1,17 +1,21 @@
 // Added by andrejem (2026): soft fade (3.8). The lights Scene Studio fades itself, set once for all scenes:
-// a switch per light and the level (steps per second). Lights that report no transition of their own
-// come first; the others may still jump to a new color (e.g. Govee), only a look at the lamp tells.
-import React, {useEffect, useMemo, useState} from "react";
+// a switch per light and its steps per second (3.10: a slider 1-20, before three levels), the smoothness
+// (how fine one step may be) once for all lights. Lights that report no transition of their own come
+// first; the others may still jump to a new color (e.g. Govee), only a look at the lamp tells.
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Translate} from "../i18n";
 import {areaName, entityAreaId} from "../tunables";
 import HaIcon from "./hass/building_blocks/HaIcon";
 import HaSwitch from "./hass/building_blocks/HaSwitch";
 
-const LEVELS: Array<{key: string, label: "soft_fade_coarse" | "soft_fade_normal" | "soft_fade_fine"}> = [
+const SMOOTHNESS: Array<{key: string, label: "soft_fade_coarse" | "soft_fade_normal" | "soft_fade_fine"}> = [
     {key: "coarse", label: "soft_fade_coarse"},
     {key: "normal", label: "soft_fade_normal"},
     {key: "fine", label: "soft_fade_fine"}
 ];
+const MIN_RATE = 1;
+const MAX_RATE = 20;
+const DEFAULT_RATE = 2;
 const COLOR_MODES = ["xy", "hs", "rgb", "rgbw", "rgbww", "color_temp"];
 const TRANSITION = 32; // LightEntityFeature.TRANSITION
 const SEGMENT = /_segment_\d+$/;
@@ -23,12 +27,17 @@ export const SoftFadeDialog: React.FunctionComponent<{
     t: Translate,
     onClose: () => void
 }> = ({hass, t, onClose}) => {
-    const [levels, setLevels] = useState<{[entityId: string]: string}>({});
+    const [levels, setLevels] = useState<{[entityId: string]: number}>({});
+    const [smoothness, setSmoothness] = useState("normal");
+    const timers = useRef<{[entityId: string]: any}>({});
     const [search, setSearch] = useState("");
     const [error, setError] = useState("");
 
     useEffect(() => {
-        hass.callWS({type: "scene_studio/get_soft_fade"}).then(r => setLevels(r?.lights ?? {})).catch(err => setError(err?.message ?? String(err)));
+        hass.callWS({type: "scene_studio/get_soft_fade"}).then(r => {
+            setLevels(r?.lights ?? {});
+            setSmoothness(r?.smoothness ?? "normal");
+        }).catch(err => setError(err?.message ?? String(err)));
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
                 e.stopPropagation();
@@ -57,20 +66,31 @@ export const SoftFadeDialog: React.FunctionComponent<{
             || (Number(a.native) - Number(b.native))
             || a.area.localeCompare(b.area) || a.name.localeCompare(b.name));
 
-    const set = (entityId: string, level: string | null) => {
-        const before = levels;
-        const next = {...levels};
-        if (level) {
-            next[entityId] = level;
-        } else {
-            delete next[entityId];
-        }
-        setLevels(next);
-        hass.callWS({type: "scene_studio/set_soft_fade", entity_id: entityId, level}).then(r => {
-            setLevels(r?.lights ?? next);
-            setError("");
-        }).catch(err => {
-            setLevels(before);
+    /** Steps per second of a light (null: not faded). The slider saves once it rests for a moment. */
+    const set = (entityId: string, rate: number | null, wait = 0) => {
+        setLevels(prev => {
+            const next = {...prev};
+            if (rate) {
+                next[entityId] = rate;
+            } else {
+                delete next[entityId];
+            }
+            return next;
+        });
+        clearTimeout(timers.current[entityId]);
+        timers.current[entityId] = setTimeout(() => {
+            hass.callWS({type: "scene_studio/set_soft_fade", entity_id: entityId, rate}).then(r => {
+                setLevels(r?.lights ?? {});
+                setError("");
+            }).catch(err => setError(err?.message ?? String(err)));
+        }, wait);
+    };
+
+    const changeSmoothness = (value: string) => {
+        const before = smoothness;
+        setSmoothness(value);
+        hass.callWS({type: "scene_studio/set_soft_fade_smoothness", smoothness: value}).then(() => setError("")).catch(err => {
+            setSmoothness(before);
             setError(err?.message ?? String(err));
         });
     };
@@ -90,6 +110,23 @@ export const SoftFadeDialog: React.FunctionComponent<{
                 </div>
                 <div className={"sp-sheet-body"}>
                     <div className={"sp-secondary sp-small"}>{t("soft_fade_help")}</div>
+                    <div className={"sp-option-row soft-fade-smoothness"}>
+                        <span>{t("soft_fade_smoothness")}</span>
+                        <span className={"sp-chips"} role={"radiogroup"} aria-label={t("soft_fade_smoothness")}>
+                            {SMOOTHNESS.map(l => (
+                                <button
+                                    key={l.key}
+                                    type={"button"}
+                                    role={"radio"}
+                                    aria-checked={smoothness === l.key}
+                                    className={"sp-chip small soft-fade-smooth-" + l.key + (smoothness === l.key ? " active" : "")}
+                                    onClick={() => changeSmoothness(l.key)}
+                                >
+                                    {t(l.label)}
+                                </button>
+                            ))}
+                        </span>
+                    </div>
                     <label className={"sp-search"}>
                         <HaIcon icon={"mdi:magnify"} size={20}/>
                         <input type={"search"} placeholder={t("soft_fade_search")} value={search} onChange={(e) => setSearch(e.target.value)}/>
@@ -108,23 +145,22 @@ export const SoftFadeDialog: React.FunctionComponent<{
                                         </span>
                                         {
                                             level &&
-                                            <span className={"sp-chips soft-fade-levels"} role={"radiogroup"} aria-label={t("soft_fade_level")}>
-                                                {LEVELS.map(l => (
-                                                    <button
-                                                        key={l.key}
-                                                        type={"button"}
-                                                        role={"radio"}
-                                                        aria-checked={level === l.key}
-                                                        className={"sp-chip small soft-fade-level-" + l.key + (level === l.key ? " active" : "")}
-                                                        onClick={() => set(r.entity_id, l.key)}
-                                                    >
-                                                        {t(l.label)}
-                                                    </button>
-                                                ))}
+                                            <span className={"soft-fade-levels"}>
+                                                <input
+                                                    type={"range"}
+                                                    className={"sp-range soft-fade-rate"}
+                                                    min={MIN_RATE}
+                                                    max={MAX_RATE}
+                                                    step={1}
+                                                    value={level}
+                                                    aria-label={t("soft_fade_level")}
+                                                    onChange={(e) => set(r.entity_id, Number(e.target.value), 500)}
+                                                />
+                                                <span className={"soft-fade-rate-value"}>{t("soft_fade_rate", {count: level})}</span>
                                             </span>
                                         }
                                         <span className={"soft-fade-switch"}>
-                                            <HaSwitch value={!!level} onValueChanged={(on) => set(r.entity_id, on ? (level ?? "normal") : null)}/>
+                                            <HaSwitch value={!!level} onValueChanged={(on) => set(r.entity_id, on ? (level ?? DEFAULT_RATE) : null)}/>
                                         </span>
                                     </div>
                                 </div>
