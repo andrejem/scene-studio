@@ -135,7 +135,7 @@ data:
 | `scene_studio/get_saved_scenes` | List saved scenes |
 | `scene_studio/get_dynamic_scenes` | List running dynamic scenes |
 | `scene_studio/resolve_targets` | Lights a scene with these targets controls |
-| `scene_studio/get_soft_fade`, `set_soft_fade` | Lights with [soft fade](Soft%20fade.md) and their level (`coarse`, `normal`, `fine`, or `null` = off); set needs an administrator |
+| `scene_studio/get_soft_fade`, `set_soft_fade`, `set_soft_fade_smoothness` | Lights with [soft fade](Soft%20fade.md) and their steps per second (`rate` 1–20, `null` = off; the levels `coarse`, `normal`, `fine` of 3.8 still work as `level`) and the smoothness (`coarse`, `normal`, `fine`); setting needs an administrator |
 | `scene_studio/get_music_scenes` | Active music scenes with speaker, cover and current colors |
 | `scene_studio/get_daytime`, `preview_daytime`, `set_daytime` | Time of day: current phase, limits and next changes; what other limits would give; change the limits (admins) |
 | `scene_studio/save_custom_preset`, `delete_custom_preset`, `set_preset_image`, `reset_preset` | Own presets from colors or photos, colors and default brightness of built-in presets (admins; the preset is passed as `preset_id`) – see [Own presets](Scene%20from%20photo.md) |
